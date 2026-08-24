@@ -307,6 +307,16 @@ export function ContractWizard() {
           <CardContent className="grid gap-4 md:grid-cols-2">
             {state.contractType === "SALE" ? (
               <>
+                <Field label="دانگ (share units)">
+                  <Input
+                    value={state.sale.shareUnits}
+                    onChange={(e) =>
+                      patch({
+                        sale: { ...state.sale, shareUnits: e.target.value },
+                      })
+                    }
+                  />
+                </Field>
                 <Field label="مبلغ کل (ریال)">
                   <Input
                     value={state.sale.totalRials}
@@ -440,6 +450,16 @@ export function ContractWizard() {
 
             {state.contractType === "RENT" ? (
               <>
+                <Field label="دانگ (share units)">
+                  <Input
+                    value={state.rent.shareUnits}
+                    onChange={(e) =>
+                      patch({
+                        rent: { ...state.rent, shareUnits: e.target.value },
+                      })
+                    }
+                  />
+                </Field>
                 <Field label="تاریخ شروع">
                   <Input
                     value={state.rent.startDate}
@@ -572,6 +592,22 @@ export function ContractWizard() {
 
             {state.contractType !== "SALE" && state.contractType !== "RENT" ? (
               <>
+                {(state.contractType === "GOODWILL" ||
+                  state.contractType === "CONSTRUCTION_JOINT_VENTURE") && (
+                  <Field label="دانگ (share units)">
+                    <Input
+                      value={state.generic.shareUnits}
+                      onChange={(e) =>
+                        patch({
+                          generic: {
+                            ...state.generic,
+                            shareUnits: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+                )}
                 <Field label="مبلغ کل (ریال)">
                   <Input
                     value={state.generic.totalRials}

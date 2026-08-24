@@ -52,7 +52,7 @@ export default function PropertiesPage() {
     <div>
       <PageHeader
         title="Properties"
-        description="Organization listings with deed and facilities JSON."
+        description="Organization listings with typed facilities and deed info."
         actionHref="/properties/new"
         actionLabel="New property"
       />

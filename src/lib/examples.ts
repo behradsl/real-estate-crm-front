@@ -1,35 +1,25 @@
-import type { ContractType, JsonObject } from "@/lib/api/types";
+import type { ContractType, JsonObject, OtherFacility } from "@/lib/api/types";
 
-export const deedInfoExample: JsonObject = {
-  shareUnits: 6,
+export const deedInfoDefaults = {
   cadastralNumber: "12345/67",
   subParcelNumber: "67",
   mainParcelNumber: "12345",
   plotNumber: "12",
   cadastralDistrict: "11",
   registrationArea: "همدان",
-  areaSqm: 120.5,
+  areaSqm: "120.5",
   postalCode: "6513112345",
 };
 
-export const facilitiesExample: JsonObject = {
-  water: true,
-  electricity: true,
-  gas: true,
-  telephone: false,
-  parking: true,
-  parkingCount: 1,
-  storage: true,
-  storageCount: 1,
-  heating: "PACKAGE_RADIATOR",
-  cooling: "SPLIT",
-  elevator: true,
-  notes: "کابینت MDF، کف سرامیک",
-};
+export const otherFacilitiesExample: OtherFacility[] = [
+  { name: "گرمایش", kind: "گرمایش از کف" },
+  { name: "کابینت", kind: "MDF" },
+];
 
 export const termsByContractType: Record<ContractType, JsonObject> = {
   SALE: {
     type: "SALE",
+    shareUnits: 6,
     price: {
       totalRials: 15000000000,
       totalInWords: "پانزده میلیارد ریال",
@@ -62,6 +52,7 @@ export const termsByContractType: Record<ContractType, JsonObject> = {
   },
   RENT: {
     type: "RENT",
+    shareUnits: 6,
     duration: {
       startDate: "1404/01/01",
       endDate: "1405/01/01",
@@ -86,6 +77,7 @@ export const termsByContractType: Record<ContractType, JsonObject> = {
   },
   GOODWILL: {
     type: "GOODWILL",
+    shareUnits: 6,
     businessRight: {
       description: "انتقال سرقفلی یک باب مغازه",
       unitCount: 1,
@@ -159,6 +151,7 @@ export const termsByContractType: Record<ContractType, JsonObject> = {
   },
   CONSTRUCTION_JOINT_VENTURE: {
     type: "CONSTRUCTION_JOINT_VENTURE",
+    shareUnits: 6,
     land: { areaSqm: 250.5, landValueRials: 50000000000 },
     shares: {
       firstPartyPercent: 55,

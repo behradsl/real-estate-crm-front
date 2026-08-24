@@ -72,6 +72,7 @@ export function contractToWizardState(contract: Contract): ContractWizardState {
     const penalties = asRecord(terms.penalties);
     const sale: SaleTermsForm = {
       ...defaultSaleTerms(),
+      shareUnits: str(terms.shareUnits),
       totalRials: str(price.totalRials ?? contract.totalAmount),
       totalInWords: str(price.totalInWords),
       downPaymentRials: str(down.amountRials),
@@ -93,6 +94,7 @@ export function contractToWizardState(contract: Contract): ContractWizardState {
     const penalties = asRecord(terms.penalties);
     const rentForm: RentTermsForm = {
       ...defaultRentTerms(),
+      shareUnits: str(terms.shareUnits),
       startDate: str(duration.startDate),
       endDate: str(duration.endDate),
       durationMonths: str(duration.value),
@@ -114,6 +116,7 @@ export function contractToWizardState(contract: Contract): ContractWizardState {
     const schedule = asRecord(terms.schedule);
     base.generic = {
       ...defaultGenericTerms(),
+      shareUnits: str(terms.shareUnits),
       totalRials: str(financials.totalRials ?? contract.totalAmount),
       monthlyRials: str(financials.monthlyRials ?? contract.monthlyAmount),
       depositRials: str(financials.depositRials ?? contract.depositAmount),

@@ -33,8 +33,8 @@ export interface Address {
   id: string;
   city: string;
   province: string;
-  street: string | null;
-  alley: string | null;
+  details: string | null;
+  plaque: string | null;
   postalCode: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -45,11 +45,16 @@ export interface Address {
 export interface AddressInput {
   city: string;
   province: string;
-  street?: string;
-  alley?: string;
+  details?: string;
+  plaque?: string;
   postalCode?: string;
   latitude?: number;
   longitude?: number;
+}
+
+export interface OtherFacility {
+  name: string;
+  kind: string;
 }
 
 export interface User {
@@ -81,7 +86,14 @@ export interface Organization {
 export interface DeedInfo {
   id: string;
   propertyId: string;
-  data: JsonObject;
+  cadastralNumber: string | null;
+  subParcelNumber: string | null;
+  mainParcelNumber: string | null;
+  plotNumber: string | null;
+  cadastralDistrict: string | null;
+  registrationArea: string | null;
+  areaSqm: number | null;
+  postalCode: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,7 +115,17 @@ export interface Property {
   bathrooms: number | null;
   parkingSpots: number | null;
   furnished: boolean | null;
-  facilities: JsonObject | null;
+  water: boolean | null;
+  electricity: boolean | null;
+  gas: boolean | null;
+  telephone: boolean | null;
+  parking: boolean | null;
+  parkingCount: number | null;
+  storage: boolean | null;
+  storageCount: number | null;
+  storageArea: number | null;
+  elevator: boolean | null;
+  otherFacilities: OtherFacility[] | null;
   referenceCode: string | null;
   deedInfo: DeedInfo | null;
   deletedAt: string | null;
@@ -235,9 +257,28 @@ export interface CreatePropertyInput {
   bathrooms?: number;
   parkingSpots?: number;
   furnished?: boolean;
-  facilities?: JsonObject;
+  water?: boolean;
+  electricity?: boolean;
+  gas?: boolean;
+  telephone?: boolean;
+  parking?: boolean;
+  parkingCount?: number;
+  storage?: boolean;
+  storageCount?: number;
+  storageArea?: number;
+  elevator?: boolean;
+  otherFacilities?: OtherFacility[];
   referenceCode?: string;
-  deedInfo?: { data: JsonObject };
+  deedInfo?: {
+    cadastralNumber?: string;
+    subParcelNumber?: string;
+    mainParcelNumber?: string;
+    plotNumber?: string;
+    cadastralDistrict?: string;
+    registrationArea?: string;
+    areaSqm?: number;
+    postalCode?: string;
+  };
 }
 
 export interface CreatePartyInput {

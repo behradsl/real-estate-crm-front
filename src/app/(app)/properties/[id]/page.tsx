@@ -10,6 +10,11 @@ import { ApiError } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+function yn(value: boolean | null | undefined) {
+  if (value == null) return "—";
+  return value ? "Yes" : "No";
+}
+
 export default function PropertyDetailPage() {
   const params = useParams<{ id: string }>();
   const [item, setItem] = useState<Property | null>(null);
@@ -27,6 +32,8 @@ export default function PropertyDetailPage() {
   if (!item) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
+
+  const deed = item.deedInfo;
 
   return (
     <div>
@@ -53,13 +60,13 @@ export default function PropertyDetailPage() {
             </p>
             <p>Year: {item.yearBuilt ?? "—"}</p>
             <p>
-              Beds / baths / parking: {item.bedrooms ?? "—"} /{" "}
-              {item.bathrooms ?? "—"} / {item.parkingSpots ?? "—"}
+              Beds / baths: {item.bedrooms ?? "—"} / {item.bathrooms ?? "—"}
             </p>
             {item.address ? (
               <p>
                 Address: {item.address.city}, {item.address.province}
-                {item.address.street ? ` — ${item.address.street}` : ""}
+                {item.address.details ? ` — ${item.address.details}` : ""}
+                {item.address.plaque ? ` (پلاک ${item.address.plaque})` : ""}
               </p>
             ) : null}
           </CardContent>
@@ -69,21 +76,59 @@ export default function PropertyDetailPage() {
           <CardHeader>
             <CardTitle className="text-base">Facilities</CardTitle>
           </CardHeader>
-          <CardContent>
-            <pre className="overflow-auto rounded-lg bg-muted p-3 text-xs">
-              {JSON.stringify(item.facilities, null, 2)}
-            </pre>
+          <CardContent className="space-y-1 text-sm">
+            <p>Water: {yn(item.water)}</p>
+            <p>Electricity: {yn(item.electricity)}</p>
+            <p>Gas: {yn(item.gas)}</p>
+            <p>Telephone: {yn(item.telephone)}</p>
+            <p>
+              Parking: {yn(item.parking)}
+              {item.parkingCount != null ? ` (${item.parkingCount})` : ""}
+            </p>
+            <p>
+              Storage: {yn(item.storage)}
+              {item.storageCount != null ? ` ×${item.storageCount}` : ""}
+              {item.storageArea != null ? ` — ${item.storageArea} m²` : ""}
+            </p>
+            <p>Elevator: {yn(item.elevator)}</p>
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Other facilities</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm">
+            {item.otherFacilities?.length ? (
+              item.otherFacilities.map((f, i) => (
+                <p key={`${f.name}-${i}`}>
+                  {f.name}
+                  {f.kind ? `: ${f.kind}` : ""}
+                </p>
+              ))
+            ) : (
+              <p className="text-muted-foreground">None</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Deed info</CardTitle>
           </CardHeader>
-          <CardContent>
-            <pre className="overflow-auto rounded-lg bg-muted p-3 text-xs">
-              {JSON.stringify(item.deedInfo?.data ?? null, null, 2)}
-            </pre>
+          <CardContent className="space-y-1 text-sm">
+            {deed ? (
+              <>
+                <p>Cadastral: {deed.cadastralNumber ?? "—"}</p>
+                <p>Sub / main parcel: {deed.subParcelNumber ?? "—"} / {deed.mainParcelNumber ?? "—"}</p>
+                <p>Plot / district: {deed.plotNumber ?? "—"} / {deed.cadastralDistrict ?? "—"}</p>
+                <p>Registration area: {deed.registrationArea ?? "—"}</p>
+                <p>Area: {deed.areaSqm ?? "—"} m²</p>
+                <p>Postal code: {deed.postalCode ?? "—"}</p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">No deed info</p>
+            )}
           </CardContent>
         </Card>
       </div>

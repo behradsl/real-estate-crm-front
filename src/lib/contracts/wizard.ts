@@ -14,6 +14,7 @@ export type WizardStep =
   | "review";
 
 export interface SaleTermsForm {
+  shareUnits: string;
   totalRials: string;
   totalInWords: string;
   downPaymentRials: string;
@@ -29,6 +30,7 @@ export interface SaleTermsForm {
 }
 
 export interface RentTermsForm {
+  shareUnits: string;
   startDate: string;
   endDate: string;
   durationMonths: string;
@@ -44,6 +46,7 @@ export interface RentTermsForm {
 }
 
 export interface GenericTermsForm {
+  shareUnits: string;
   totalRials: string;
   monthlyRials: string;
   depositRials: string;
@@ -88,6 +91,7 @@ export const WIZARD_STEPS: { id: WizardStep; label: string }[] = [
 
 export function defaultSaleTerms(): SaleTermsForm {
   return {
+    shareUnits: "6",
     totalRials: "15000000000",
     totalInWords: "پانزده میلیارد ریال",
     downPaymentRials: "2000000000",
@@ -105,6 +109,7 @@ export function defaultSaleTerms(): SaleTermsForm {
 
 export function defaultRentTerms(): RentTermsForm {
   return {
+    shareUnits: "6",
     startDate: "1404/01/01",
     endDate: "1405/01/01",
     durationMonths: "12",
@@ -122,6 +127,7 @@ export function defaultRentTerms(): RentTermsForm {
 
 export function defaultGenericTerms(): GenericTermsForm {
   return {
+    shareUnits: "6",
     totalRials: "",
     monthlyRials: "",
     depositRials: "",
@@ -131,6 +137,16 @@ export function defaultGenericTerms(): GenericTermsForm {
     officialDeedDueAt: "",
     notes: "",
   };
+}
+
+/** Share units (دانگ) apply to sale, rent, goodwill, and construction JV — not deed. */
+export function contractTypeHasShareUnits(type: ContractType): boolean {
+  return (
+    type === "SALE" ||
+    type === "RENT" ||
+    type === "GOODWILL" ||
+    type === "CONSTRUCTION_JOINT_VENTURE"
+  );
 }
 
 export function createInitialWizardState(): ContractWizardState {
@@ -182,6 +198,7 @@ export function buildTermsAndConditions(state: ContractWizardState): JsonObject 
     const s = state.sale;
     return {
       type: "SALE",
+      shareUnits: num(s.shareUnits),
       price: {
         totalRials: num(s.totalRials),
         totalInWords: s.totalInWords,
@@ -217,6 +234,7 @@ export function buildTermsAndConditions(state: ContractWizardState): JsonObject 
     const r = state.rent;
     return {
       type: "RENT",
+      shareUnits: num(r.shareUnits),
       duration: {
         startDate: r.startDate,
         endDate: r.endDate,
@@ -245,6 +263,9 @@ export function buildTermsAndConditions(state: ContractWizardState): JsonObject 
   const g = state.generic;
   return {
     type: state.contractType,
+    ...(contractTypeHasShareUnits(state.contractType)
+      ? { shareUnits: num(g.shareUnits) }
+      : {}),
     financials: {
       totalRials: num(g.totalRials),
       monthlyRials: num(g.monthlyRials),
