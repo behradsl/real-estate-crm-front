@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/api/client";
 import type { Party, PartyType, Property, PropertyType } from "@/lib/api/types";
 import { PROPERTY_TYPES } from "@/lib/examples";
 import { partyDisplayName } from "@/lib/contracts/wizard";
+import { messages, partyTypeLabels, propertyTypeLabels } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +55,7 @@ export function PropertyPicker({
       .list()
       .then(setItems)
       .catch((error) =>
-        toast.error(error instanceof ApiError ? error.message : "Load failed"),
+        toast.error(error instanceof ApiError ? error.message : messages.loadFailed),
       );
   }, [open]);
 
@@ -70,56 +71,58 @@ export function PropertyPicker({
       });
       onSelect(created);
       setOpen(false);
-      toast.success("Property created");
+      toast.success("ملک ثبت شد");
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Create failed");
+      toast.error(error instanceof ApiError ? error.message : messages.createFailed);
     } finally {
       setCreating(false);
     }
   }
 
   return (
-    <div className="space-y-3 rounded-xl border p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-3 rounded-xl border bg-card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">Selected property</p>
-          <p className="text-sm text-muted-foreground">
-            {selected ? selected.title : "None selected"}
+          <p className="text-sm font-medium leading-relaxed">ملک انتخاب‌شده</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {selected ? selected.title : messages.noneSelected}
           </p>
         </div>
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button type="button" variant="outline">
-              Select or create
+              {messages.selectOrCreate}
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
             <SheetHeader>
-              <SheetTitle>Property</SheetTitle>
+              <SheetTitle>انتخاب ملک</SheetTitle>
               <SheetDescription>
-                Pick an existing listing or create one inline.
+                از فهرست موجود انتخاب کنید یا ملک جدید ثبت کنید.
               </SheetDescription>
             </SheetHeader>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2 px-4">
               {items.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm hover:bg-muted"
+                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-start text-sm leading-relaxed hover:bg-muted"
                   onClick={() => {
                     onSelect(item);
                     setOpen(false);
                   }}
                 >
                   <span>{item.title}</span>
-                  <span className="text-muted-foreground">{item.propertyType}</span>
+                  <span className="text-muted-foreground">
+                    {propertyTypeLabels[item.propertyType]}
+                  </span>
                 </button>
               ))}
             </div>
-            <form className="mt-6 space-y-3 border-t pt-4" onSubmit={onCreate}>
-              <p className="text-sm font-medium">Create new</p>
+            <form className="mt-6 space-y-4 border-t px-4 pt-4 pb-6" onSubmit={onCreate}>
+              <p className="text-sm font-medium leading-relaxed">ثبت ملک جدید</p>
               <div className="space-y-2">
-                <Label>Title</Label>
+                <Label>عنوان</Label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -127,7 +130,7 @@ export function PropertyPicker({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>نوع ملک</Label>
                 <Select
                   value={propertyType}
                   onValueChange={(v) => setPropertyType(v as PropertyType)}
@@ -138,7 +141,7 @@ export function PropertyPicker({
                   <SelectContent>
                     {PROPERTY_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
-                        {type}
+                        {propertyTypeLabels[type]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -146,11 +149,11 @@ export function PropertyPicker({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>City</Label>
+                  <Label>شهر</Label>
                   <Input value={city} onChange={(e) => setCity(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Province</Label>
+                  <Label>استان</Label>
                   <Input
                     value={province}
                     onChange={(e) => setProvince(e.target.value)}
@@ -159,7 +162,7 @@ export function PropertyPicker({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Area m²</Label>
+                <Label>متراژ (متر مربع)</Label>
                 <Input
                   type="number"
                   value={areaSqm}
@@ -167,7 +170,7 @@ export function PropertyPicker({
                 />
               </div>
               <Button disabled={creating} type="submit">
-                {creating ? "Creating…" : "Create & select"}
+                {creating ? messages.creating : messages.createAndSelect}
               </Button>
             </form>
           </SheetContent>
@@ -205,7 +208,7 @@ export function PartyPicker({
       .list()
       .then(setItems)
       .catch((error) =>
-        toast.error(error instanceof ApiError ? error.message : "Load failed"),
+        toast.error(error instanceof ApiError ? error.message : messages.loadFailed),
       );
   }, [open]);
 
@@ -226,20 +229,20 @@ export function PartyPicker({
       });
       onSelect(created);
       setOpen(false);
-      toast.success("Party created");
+      toast.success("طرف قرارداد ثبت شد");
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Create failed");
+      toast.error(error instanceof ApiError ? error.message : messages.createFailed);
     } finally {
       setCreating(false);
     }
   }
 
   return (
-    <div className="space-y-3 rounded-xl border p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-3 rounded-xl border bg-card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">{label}</p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm font-medium leading-relaxed">{label}</p>
+          <p className="text-sm leading-relaxed text-muted-foreground">
             {partyDisplayName(selected)}
             {selected?.nationalCode ? ` — ${selected.nationalCode}` : ""}
           </p>
@@ -247,36 +250,38 @@ export function PartyPicker({
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button type="button" variant="outline">
-              Select or create
+              {messages.selectOrCreate}
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
             <SheetHeader>
               <SheetTitle>{label}</SheetTitle>
               <SheetDescription>
-                Choose an existing party or create one here.
+                از فهرست موجود انتخاب کنید یا طرف جدید ثبت کنید.
               </SheetDescription>
             </SheetHeader>
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-2 px-4">
               {items.map((item) => (
                 <button
                   key={item.id}
                   type="button"
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm hover:bg-muted"
+                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-start text-sm leading-relaxed hover:bg-muted"
                   onClick={() => {
                     onSelect(item);
                     setOpen(false);
                   }}
                 >
                   <span>{partyDisplayName(item)}</span>
-                  <span className="text-muted-foreground">{item.type}</span>
+                  <span className="text-muted-foreground">
+                    {partyTypeLabels[item.type]}
+                  </span>
                 </button>
               ))}
             </div>
-            <form className="mt-6 space-y-3 border-t pt-4" onSubmit={onCreate}>
-              <p className="text-sm font-medium">Create new</p>
+            <form className="mt-6 space-y-4 border-t px-4 pt-4 pb-6" onSubmit={onCreate}>
+              <p className="text-sm font-medium leading-relaxed">ثبت طرف جدید</p>
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>نوع</Label>
                 <Select
                   value={type}
                   onValueChange={(v) => setType(v as PartyType)}
@@ -285,8 +290,8 @@ export function PartyPicker({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PERSON">PERSON</SelectItem>
-                    <SelectItem value="COMPANY">COMPANY</SelectItem>
+                    <SelectItem value="PERSON">{partyTypeLabels.PERSON}</SelectItem>
+                    <SelectItem value="COMPANY">{partyTypeLabels.COMPANY}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -294,7 +299,7 @@ export function PartyPicker({
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label>First name</Label>
+                      <Label>نام</Label>
                       <Input
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
@@ -302,7 +307,7 @@ export function PartyPicker({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Last name</Label>
+                      <Label>نام خانوادگی</Label>
                       <Input
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
@@ -311,23 +316,24 @@ export function PartyPicker({
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Father name</Label>
+                    <Label>نام پدر</Label>
                     <Input
                       value={fatherName}
                       onChange={(e) => setFatherName(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>National code</Label>
+                    <Label>کد ملی</Label>
                     <Input
                       value={nationalCode}
                       onChange={(e) => setNationalCode(e.target.value)}
+                      dir="ltr"
                     />
                   </div>
                 </>
               ) : (
                 <div className="space-y-2">
-                  <Label>Company name</Label>
+                  <Label>نام شرکت</Label>
                   <Input
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
@@ -336,16 +342,20 @@ export function PartyPicker({
                 </div>
               )}
               <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Label>تلفن</Label>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  dir="ltr"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>City</Label>
+                  <Label>شهر</Label>
                   <Input value={city} onChange={(e) => setCity(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Province</Label>
+                  <Label>استان</Label>
                   <Input
                     value={province}
                     onChange={(e) => setProvince(e.target.value)}
@@ -354,7 +364,7 @@ export function PartyPicker({
                 </div>
               </div>
               <Button disabled={creating} type="submit">
-                {creating ? "Creating…" : "Create & select"}
+                {creating ? messages.creating : messages.createAndSelect}
               </Button>
             </form>
           </SheetContent>
@@ -387,7 +397,7 @@ export function NotesField({
   onChange: (value: string) => void;
 }) {
   return (
-    <Field label="Notes / توضیحات">
+    <Field label="توضیحات">
       <Textarea value={value} onChange={(e) => onChange(e.target.value)} />
     </Field>
   );

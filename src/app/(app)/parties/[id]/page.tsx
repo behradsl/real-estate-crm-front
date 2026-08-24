@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
+import { RelatedContractsCard } from "@/components/contracts/related-contracts-card";
 import { partiesApi } from "@/lib/api";
 import type { Party } from "@/lib/api/types";
 import { ApiError } from "@/lib/api/client";
+import { partyDisplayName } from "@/lib/contracts/wizard";
+import { genderLabels, messages, partyTypeLabels } from "@/lib/labels";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function PartyDetailPage() {
@@ -19,45 +24,51 @@ export default function PartyDetailPage() {
       try {
         setItem(await partiesApi.get(params.id));
       } catch (error) {
-        toast.error(error instanceof ApiError ? error.message : "Load failed");
+        toast.error(error instanceof ApiError ? error.message : messages.loadFailed);
       }
     })();
   }, [params.id]);
 
   if (!item) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <p className="text-sm leading-relaxed text-muted-foreground">{messages.loading}</p>;
   }
-
-  const title =
-    item.type === "COMPANY"
-      ? item.companyName ?? "Company"
-      : [item.firstName, item.lastName].filter(Boolean).join(" ") || "Person";
 
   return (
     <div>
-      <PageHeader title={title} />
-      <div className="mb-4">
-        <Badge>{item.type}</Badge>
+      <PageHeader
+        title={partyDisplayName(item)}
+        actions={
+          <Button asChild variant="secondary">
+            <Link href={`/parties/${item.id}/edit`}>{messages.edit}</Link>
+          </Button>
+        }
+      />
+      <div className="mb-6">
+        <Badge>{partyTypeLabels[item.type]}</Badge>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1 text-sm">
-          <p>National code: {item.nationalCode ?? "—"}</p>
-          <p>Economic code: {item.economicCode ?? "—"}</p>
-          <p>Father: {item.fatherName ?? "—"}</p>
-          <p>Gender: {item.gender ?? "—"}</p>
-          <p>Phone: {item.phone ?? "—"}</p>
-          <p>Email: {item.email ?? "—"}</p>
-          <p>Birth place: {item.birthPlace ?? "—"}</p>
-          {item.address ? (
-            <p>
-              Address: {item.address.city}, {item.address.province}
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
+      <div className="grid gap-5 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>مشخصات</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm leading-relaxed">
+            <p>کد ملی: {item.nationalCode ?? messages.none}</p>
+            <p>شناسه اقتصادی: {item.economicCode ?? messages.none}</p>
+            <p>نام پدر: {item.fatherName ?? messages.none}</p>
+            <p>جنسیت: {item.gender ? genderLabels[item.gender] : messages.none}</p>
+            <p>تلفن: {item.phone ?? messages.none}</p>
+            <p>ایمیل: {item.email ?? messages.none}</p>
+            <p>محل تولد: {item.birthPlace ?? messages.none}</p>
+            {item.address ? (
+              <p>
+                نشانی: {item.address.city}، {item.address.province}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <RelatedContractsCard contracts={item.contracts} showRole />
+      </div>
     </div>
   );
 }

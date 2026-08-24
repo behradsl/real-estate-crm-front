@@ -82,11 +82,11 @@ export interface ContractWizardState {
 }
 
 export const WIZARD_STEPS: { id: WizardStep; label: string }[] = [
-  { id: "basics", label: "Basics" },
-  { id: "property", label: "Property" },
-  { id: "parties", label: "Parties" },
-  { id: "terms", label: "Terms" },
-  { id: "review", label: "Review & print" },
+  { id: "basics", label: "اطلاعات پایه" },
+  { id: "property", label: "ملک" },
+  { id: "parties", label: "طرفین" },
+  { id: "terms", label: "شرایط" },
+  { id: "review", label: "بازبینی و چاپ" },
 ];
 
 export function defaultSaleTerms(): SaleTermsForm {

@@ -1,6 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import {
+  Building2,
+  ChevronLeft,
+  FileText,
+  Home,
+  UserSquare2,
+} from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -15,18 +22,21 @@ import {
 const links = [
   {
     href: "/properties",
-    title: "Properties",
-    description: "Register listings with address, facilities, and deed info.",
+    title: "املاک",
+    description: "ثبت و مدیریت فایل‌ها با نشانی، امکانات و مشخصات سند.",
+    icon: Home,
   },
   {
     href: "/parties",
-    title: "Parties",
-    description: "People and companies that appear on contracts.",
+    title: "طرفین قرارداد",
+    description: "اشخاص حقیقی و حقوقی که در مبایعه‌نامه یا رهن و اجاره حضور دارند.",
+    icon: UserSquare2,
   },
   {
     href: "/contracts",
-    title: "Contracts",
-    description: "Create typed contracts with terms JSON and signatures.",
+    title: "قراردادها",
+    description: "تنظیم قرارداد با شرایط مالی، امضا و پیش‌نمایش چاپی.",
+    icon: FileText,
   },
 ];
 
@@ -36,37 +46,53 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description={`Welcome back, ${user?.firstName ?? ""}.`}
+        title="داشبورد"
+        description={
+          user?.firstName
+            ? `${user.firstName} عزیز، خوش آمدید.`
+            : "به سامانه مدیریت املاک خوش آمدید."
+        }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {links.map((link) => (
-          <Card key={link.href}>
-            <CardHeader>
-              <CardTitle className="text-lg">{link.title}</CardTitle>
-              <CardDescription>{link.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline">
-                <Link href={link.href}>Open</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-5 md:grid-cols-3">
+        {links.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Card key={link.href} className="transition-shadow hover:shadow-md">
+              <CardHeader className="space-y-3">
+                <div className="flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                  <Icon className="size-5" />
+                </div>
+                <CardTitle className="text-lg">{link.title}</CardTitle>
+                <CardDescription>{link.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline">
+                  <Link href={link.href} className="gap-1.5">
+                    ورود
+                    <ChevronLeft className="size-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {hasRole("ADMIN") ? (
-        <Card className="mt-4">
+        <Card className="mt-5">
           <CardHeader>
-            <CardTitle className="text-lg">Admin</CardTitle>
+            <div className="mb-2 flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Building2 className="size-5" />
+            </div>
+            <CardTitle className="text-lg">مدیریت سامانه</CardTitle>
             <CardDescription>
-              Create organizations and owners to onboard agencies.
+              برای راه‌اندازی آژانس جدید، سازمان و حساب مالک را یکجا ایجاد کنید.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button asChild>
-              <Link href="/organizations/new">Create organization</Link>
+              <Link href="/organizations/new">ثبت آژانس جدید</Link>
             </Button>
           </CardContent>
         </Card>

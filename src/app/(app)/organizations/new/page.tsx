@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useAuth } from "@/components/providers/auth-provider";
 import { organizationsApi } from "@/lib/api";
 import { ApiError } from "@/lib/api/client";
+import { messages } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,19 +22,19 @@ export default function NewOrganizationPage() {
   const { hasRole } = useAuth();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [name, setName] = useState("Acme Realty");
-  const [slug, setSlug] = useState("acme-realty");
-  const [email, setEmail] = useState("info@acme.com");
+  const [name, setName] = useState("آژانس نمونه");
+  const [slug, setSlug] = useState("namoneh");
+  const [email, setEmail] = useState("info@namoneh.com");
   const [phone, setPhone] = useState("");
-  const [ownerEmail, setOwnerEmail] = useState("owner@acme.com");
+  const [ownerEmail, setOwnerEmail] = useState("owner@namoneh.com");
   const [ownerPassword, setOwnerPassword] = useState("password123");
-  const [ownerFirstName, setOwnerFirstName] = useState("Sara");
-  const [ownerLastName, setOwnerLastName] = useState("Karimi");
+  const [ownerFirstName, setOwnerFirstName] = useState("سارا");
+  const [ownerLastName, setOwnerLastName] = useState("کریمی");
 
   if (!hasRole("ADMIN")) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Only platform ADMIN can create organizations.
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        فقط مدیر سامانه می‌تواند آژانس جدید ثبت کند.
       </p>
     );
   }
@@ -54,10 +55,10 @@ export default function NewOrganizationPage() {
           lastName: ownerLastName,
         },
       });
-      toast.success("Organization created");
+      toast.success("آژانس ثبت شد");
       router.push(`/organizations/${created.id}`);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Create failed");
+      toast.error(error instanceof ApiError ? error.message : messages.createFailed);
     } finally {
       setSubmitting(false);
     }
@@ -66,40 +67,49 @@ export default function NewOrganizationPage() {
   return (
     <div>
       <PageHeader
-        title="New organization"
-        description="Creates the agency and its OWNER in one request."
+        title="ثبت آژانس جدید"
+        description="سازمان و حساب مالک آژانس در یک مرحله ایجاد می‌شود."
       />
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-5" onSubmit={onSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Organization</CardTitle>
+            <CardTitle>مشخصات آژانس</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+          <CardContent className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label>نام</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Slug</Label>
-              <Input value={slug} onChange={(e) => setSlug(e.target.value)} required />
+              <Label>شناسه لاتین</Label>
+              <Input
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                required
+                dir="ltr"
+              />
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label>ایمیل</Label>
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Label>تلفن</Label>
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                dir="ltr"
+              />
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Owner</CardTitle>
+            <CardTitle>مالک آژانس</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+          <CardContent className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>ایمیل</Label>
               <Input
                 type="email"
                 value={ownerEmail}
@@ -108,7 +118,7 @@ export default function NewOrganizationPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Password</Label>
+              <Label>رمز عبور</Label>
               <Input
                 type="password"
                 value={ownerPassword}
@@ -118,7 +128,7 @@ export default function NewOrganizationPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>First name</Label>
+              <Label>نام</Label>
               <Input
                 value={ownerFirstName}
                 onChange={(e) => setOwnerFirstName(e.target.value)}
@@ -126,7 +136,7 @@ export default function NewOrganizationPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Last name</Label>
+              <Label>نام خانوادگی</Label>
               <Input
                 value={ownerLastName}
                 onChange={(e) => setOwnerLastName(e.target.value)}
@@ -136,7 +146,7 @@ export default function NewOrganizationPage() {
           </CardContent>
         </Card>
         <Button disabled={submitting} type="submit">
-          {submitting ? "Creating…" : "Create organization"}
+          {submitting ? messages.creating : "ثبت آژانس"}
         </Button>
       </form>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,6 +14,13 @@ import {
   ContractPreview,
   printContract,
 } from "@/components/contracts/contract-preview";
+import { partyDisplayName } from "@/lib/contracts/wizard";
+import { formatDateTime } from "@/lib/format";
+import {
+  contractPartyRoleLabels,
+  contractTypeLabels,
+  messages,
+} from "@/lib/labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +41,7 @@ export default function ContractDetailPage() {
       const first = contract.parties?.find((p) => p.role === "FIRST_PARTY");
       if (first) setPartyId(first.partyId);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Load failed");
+      toast.error(error instanceof ApiError ? error.message : messages.loadFailed);
     }
   }
 
@@ -60,11 +68,11 @@ export default function ContractDetailPage() {
         },
         signedAt: new Date().toISOString(),
       });
-      toast.success("Signature added");
+      toast.success("امضا ثبت شد");
       await load();
     } catch (error) {
       toast.error(
-        error instanceof ApiError ? error.message : "Signature failed",
+        error instanceof ApiError ? error.message : "ثبت امضا انجام نشد",
       );
     } finally {
       setSubmitting(false);
@@ -77,7 +85,7 @@ export default function ContractDetailPage() {
   }
 
   if (!item || !wizardState) {
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+    return <p className="text-sm leading-relaxed text-muted-foreground">{messages.loading}</p>;
   }
 
   return (
@@ -85,25 +93,30 @@ export default function ContractDetailPage() {
       <PageHeader
         title={item.contractNumber}
         description={item.description ?? undefined}
+        actions={
+          <Button asChild variant="secondary">
+            <Link href={`/contracts/${item.id}/edit`}>{messages.edit}</Link>
+          </Button>
+        }
       />
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Badge>{item.contractType}</Badge>
+      <div className="mb-6 flex flex-wrap gap-2">
+        <Badge>{contractTypeLabels[item.contractType]}</Badge>
         {item.totalAmount ? (
-          <Badge variant="secondary">Total: {item.totalAmount}</Badge>
+          <Badge variant="secondary">مبلغ کل: {item.totalAmount}</Badge>
         ) : null}
         {item.monthlyAmount ? (
-          <Badge variant="secondary">Monthly: {item.monthlyAmount}</Badge>
+          <Badge variant="secondary">اجاره ماهانه: {item.monthlyAmount}</Badge>
         ) : null}
         {item.signedAt ? (
-          <Badge variant="secondary">Signed</Badge>
+          <Badge variant="secondary">امضاشده</Badge>
         ) : (
-          <Badge variant="outline">Draft</Badge>
+          <Badge variant="outline">پیش‌نویس</Badge>
         )}
       </div>
 
-      <Card className="mb-4 print:hidden">
+      <Card className="mb-5 print:hidden">
         <CardHeader>
-          <CardTitle className="text-base">PDF preview & print</CardTitle>
+          <CardTitle>پیش‌نمایش و چاپ</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button
@@ -111,21 +124,21 @@ export default function ContractDetailPage() {
             variant={previewMode === "full" ? "default" : "outline"}
             onClick={() => setPreviewMode("full")}
           >
-            Full preview
+            پیش‌نمایش کامل
           </Button>
           <Button
             type="button"
             variant={previewMode === "print-only" ? "default" : "outline"}
             onClick={() => setPreviewMode("print-only")}
           >
-            Print only
+            فقط چاپ فیلدها
           </Button>
           <Button
             type="button"
             variant="secondary"
             onClick={() => printNow(previewMode)}
           >
-            Print
+            {messages.print}
           </Button>
         </CardContent>
       </Card>
@@ -137,20 +150,18 @@ export default function ContractDetailPage() {
         <ContractPreview state={wizardState} mode={previewMode} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 print:hidden">
+      <div className="grid gap-5 md:grid-cols-2 print:hidden">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Parties</CardTitle>
+            <CardTitle>طرفین</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
+          <CardContent className="space-y-2 text-sm leading-relaxed">
             {(item.parties ?? []).map((link) => (
               <p key={link.id}>
-                <span className="font-medium">{link.role}</span>:{" "}
-                {link.party.type === "COMPANY"
-                  ? link.party.companyName
-                  : [link.party.firstName, link.party.lastName]
-                      .filter(Boolean)
-                      .join(" ")}
+                <span className="font-medium">
+                  {contractPartyRoleLabels[link.role]}
+                </span>
+                : {partyDisplayName(link.party)}
               </p>
             ))}
           </CardContent>
@@ -158,27 +169,28 @@ export default function ContractDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Add signature</CardTitle>
+            <CardTitle>ثبت امضا</CardTitle>
           </CardHeader>
           <CardContent>
-            <form className="space-y-3" onSubmit={addSignature}>
+            <form className="space-y-4" onSubmit={addSignature}>
               <div className="space-y-2">
-                <Label>Party id</Label>
+                <Label>شناسه طرف قرارداد</Label>
                 <Input
                   value={partyId}
                   onChange={(e) => setPartyId(e.target.value)}
                   required
+                  dir="ltr"
                 />
               </div>
               <Button disabled={submitting} type="submit">
-                {submitting ? "Saving…" : "Add signature"}
+                {submitting ? messages.saving : "ثبت امضا"}
               </Button>
             </form>
-            <div className="mt-4 space-y-2 text-sm">
+            <div className="mt-5 space-y-2 text-sm leading-relaxed">
               {(item.signatures ?? []).map((signature) => (
                 <p key={signature.id}>
-                  {signature.partyId.slice(0, 8)}… at{" "}
-                  {new Date(signature.signedAt).toLocaleString()}
+                  {signature.partyId.slice(0, 8)}… در{" "}
+                  {formatDateTime(signature.signedAt)}
                 </p>
               ))}
             </div>
@@ -187,12 +199,12 @@ export default function ContractDetailPage() {
 
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base">CRM amounts</CardTitle>
+            <CardTitle>مبالغ قرارداد</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2 text-sm md:grid-cols-3">
-            <p>Total: {item.totalAmount ?? "—"}</p>
-            <p>Monthly: {item.monthlyAmount ?? "—"}</p>
-            <p>Deposit: {item.depositAmount ?? "—"}</p>
+          <CardContent className="grid gap-3 text-sm leading-relaxed md:grid-cols-3">
+            <p>مبلغ کل: {item.totalAmount ?? messages.none}</p>
+            <p>اجاره ماهانه: {item.monthlyAmount ?? messages.none}</p>
+            <p>ودیعه / رهن: {item.depositAmount ?? messages.none}</p>
           </CardContent>
         </Card>
       </div>

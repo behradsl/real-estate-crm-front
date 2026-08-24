@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { contractsApi } from "@/lib/api";
 import type { Contract } from "@/lib/api/types";
 import { ApiError } from "@/lib/api/client";
+import { formatDate } from "@/lib/format";
+import { contractTypeLabels, messages } from "@/lib/labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +29,7 @@ export default function ContractsPage() {
     try {
       setItems(await contractsApi.list());
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Failed to load");
+      toast.error(error instanceof ApiError ? error.message : messages.loadFailed);
     } finally {
       setLoading(false);
     }
@@ -38,72 +40,81 @@ export default function ContractsPage() {
   }, []);
 
   async function onDelete(id: string) {
-    if (!confirm("Soft-delete this contract?")) return;
+    if (!confirm("این قرارداد حذف شود؟")) return;
     try {
       await contractsApi.remove(id);
-      toast.success("Contract deleted");
+      toast.success("قرارداد حذف شد");
       await load();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Delete failed");
+      toast.error(error instanceof ApiError ? error.message : messages.deleteFailed);
     }
   }
 
   return (
     <div>
       <PageHeader
-        title="Contracts"
-        description="Step-by-step wizard with typed terms and PDF preview/print."
+        title="قراردادها"
+        description="تنظیم گام‌به‌گام مبایعه‌نامه، رهن و اجاره و سایر قراردادها با پیش‌نمایش چاپی."
         actionHref="/contracts/new"
-        actionLabel="New contract"
+        actionLabel="قرارداد جدید"
       />
-      <div className="rounded-xl border">
+      <div className="overflow-hidden rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Number</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Commission</TableHead>
-              <TableHead>Signed</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>شماره</TableHead>
+              <TableHead>نوع</TableHead>
+              <TableHead>مبلغ کل</TableHead>
+              <TableHead>کمیسیون</TableHead>
+              <TableHead>تاریخ امضا</TableHead>
+              <TableHead className="text-end">{messages.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6}>Loading…</TableCell>
+                <TableCell colSpan={6} className="text-muted-foreground">
+                  {messages.loading}
+                </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}>No contracts yet.</TableCell>
+                <TableCell colSpan={6} className="text-muted-foreground">
+                  هنوز قراردادی ثبت نشده است.
+                </TableCell>
               </TableRow>
             ) : (
               items.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">
+                  <TableCell className="font-medium" dir="ltr">
                     {item.contractNumber}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{item.contractType}</Badge>
+                    <Badge variant="secondary">
+                      {contractTypeLabels[item.contractType]}
+                    </Badge>
                   </TableCell>
-                  <TableCell>{item.totalAmount ?? item.monthlyAmount ?? "—"}</TableCell>
-                  <TableCell>{item.commissionAmount ?? "—"}</TableCell>
-                  <TableCell>
-                    {item.signedAt
-                      ? new Date(item.signedAt).toLocaleDateString()
-                      : "—"}
+                  <TableCell dir="ltr">
+                    {item.totalAmount ?? item.monthlyAmount ?? messages.none}
                   </TableCell>
-                  <TableCell className="space-x-2 text-right">
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/contracts/${item.id}`}>Open</Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => void onDelete(item.id)}
-                    >
-                      Delete
-                    </Button>
+                  <TableCell dir="ltr">{item.commissionAmount ?? messages.none}</TableCell>
+                  <TableCell>{formatDate(item.signedAt)}</TableCell>
+                  <TableCell className="text-end">
+                    <div className="flex justify-end gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/contracts/${item.id}`}>{messages.open}</Link>
+                      </Button>
+                      <Button asChild size="sm" variant="secondary">
+                        <Link href={`/contracts/${item.id}/edit`}>{messages.edit}</Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => void onDelete(item.id)}
+                      >
+                        {messages.delete}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

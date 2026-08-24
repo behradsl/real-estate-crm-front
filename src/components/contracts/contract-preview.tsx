@@ -145,7 +145,7 @@ function PdfPageCanvas({ url }: { url: string }) {
         if (!cancelled) setLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load PDF");
+          setError(err instanceof Error ? err.message : "بارگذاری پیش‌نویس با خطا مواجه شد");
           setLoading(false);
         }
       }
@@ -161,7 +161,7 @@ function PdfPageCanvas({ url }: { url: string }) {
     <div className="relative w-full">
       {loading ? (
         <div className="flex aspect-[210/297] items-center justify-center bg-muted/40 text-sm text-muted-foreground">
-          Loading PDF template…
+          در حال بارگذاری پیش‌نویس قرارداد…
         </div>
       ) : null}
       {error ? (
@@ -202,7 +202,7 @@ export function ContractPreview({
       <OverlayFields state={state} page={1} />
       {!pdfUrl && showPdf ? (
         <p className="absolute inset-x-0 top-4 text-center text-sm text-muted-foreground">
-          No PDF template for this contract type.
+          برای این نوع قرارداد پیش‌نویس چاپی تعریف نشده است.
         </p>
       ) : null}
     </div>

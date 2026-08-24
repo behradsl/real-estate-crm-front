@@ -3,8 +3,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { Building2 } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ApiError } from "@/lib/api/client";
+import { messages } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,11 +42,11 @@ export default function LoginClient() {
         password,
         organizationSlug: organizationSlug.trim() || undefined,
       });
-      toast.success("Signed in");
+      toast.success(messages.signedIn);
       router.replace(searchParams.get("next") || "/dashboard");
     } catch (error) {
       const message =
-        error instanceof ApiError ? error.message : "Login failed";
+        error instanceof ApiError ? error.message : messages.loginFailed;
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -52,19 +54,22 @@ export default function LoginClient() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#e8eef7,_#f7f7f5_45%,_#f3efe8)] px-4">
-      <Card className="w-full max-w-md border-border/70 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Real Estate CRM</CardTitle>
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_oklch(0.92_0.03_175)_0%,_oklch(0.975_0.008_80)_42%,_oklch(0.94_0.02_245)_100%)] px-4 dark:bg-[radial-gradient(ellipse_at_top,_oklch(0.24_0.04_175)_0%,_oklch(0.18_0.025_250)_50%,_oklch(0.16_0.03_248)_100%)]">
+      <Card className="w-full max-w-md border-border/70 shadow-lg">
+        <CardHeader className="space-y-3">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Building2 className="size-5" />
+          </div>
+          <CardTitle className="text-2xl">{messages.appName}</CardTitle>
           <CardDescription>
-            Sign in with your session credentials. Leave organization slug empty
-            for platform ADMIN.
+            با حساب کاربری آژانس وارد شوید. شناسه سازمان را برای مدیر سامانه خالی
+            بگذارید.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
+          <form className="space-y-5" onSubmit={onSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">ایمیل</Label>
               <Input
                 id="email"
                 type="email"
@@ -72,10 +77,11 @@ export default function LoginClient() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                dir="ltr"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">رمز عبور</Label>
               <Input
                 id="password"
                 type="password"
@@ -84,19 +90,21 @@ export default function LoginClient() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
+                dir="ltr"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">Organization slug (optional)</Label>
+              <Label htmlFor="slug">شناسه سازمان (اختیاری)</Label>
               <Input
                 id="slug"
                 placeholder="acme-realty"
                 value={organizationSlug}
                 onChange={(e) => setOrganizationSlug(e.target.value)}
+                dir="ltr"
               />
             </div>
             <Button className="w-full" disabled={submitting} type="submit">
-              {submitting ? "Signing in…" : "Sign in"}
+              {submitting ? messages.signingIn : messages.signIn}
             </Button>
           </form>
         </CardContent>

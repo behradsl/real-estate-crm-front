@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/layout/page-header";
 import { propertiesApi } from "@/lib/api";
 import type { Property } from "@/lib/api/types";
 import { ApiError } from "@/lib/api/client";
+import { formatArea } from "@/lib/format";
+import { messages, propertyTypeLabels } from "@/lib/labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +29,7 @@ export default function PropertiesPage() {
     try {
       setItems(await propertiesApi.list());
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Failed to load");
+      toast.error(error instanceof ApiError ? error.message : messages.loadFailed);
     } finally {
       setLoading(false);
     }
@@ -38,67 +40,76 @@ export default function PropertiesPage() {
   }, []);
 
   async function onDelete(id: string) {
-    if (!confirm("Soft-delete this property?")) return;
+    if (!confirm("این ملک از فهرست حذف شود؟")) return;
     try {
       await propertiesApi.remove(id);
-      toast.success("Property deleted");
+      toast.success("ملک حذف شد");
       await load();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Delete failed");
+      toast.error(error instanceof ApiError ? error.message : messages.deleteFailed);
     }
   }
 
   return (
     <div>
       <PageHeader
-        title="Properties"
-        description="Organization listings with typed facilities and deed info."
+        title="املاک"
+        description="فایل‌های آژانس با نوع کاربری، کد ارجاع و متراژ."
         actionHref="/properties/new"
-        actionLabel="New property"
+        actionLabel="ثبت ملک جدید"
       />
 
-      <div className="rounded-xl border">
+      <div className="overflow-hidden rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Ref</TableHead>
-              <TableHead>Area</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>عنوان</TableHead>
+              <TableHead>نوع ملک</TableHead>
+              <TableHead>کد ارجاع</TableHead>
+              <TableHead>متراژ</TableHead>
+              <TableHead className="text-end">{messages.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5}>Loading…</TableCell>
+                <TableCell colSpan={5} className="text-muted-foreground">
+                  {messages.loading}
+                </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5}>No properties yet.</TableCell>
+                <TableCell colSpan={5} className="text-muted-foreground">
+                  هنوز ملکی ثبت نشده است.
+                </TableCell>
               </TableRow>
             ) : (
               items.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.title}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{item.propertyType}</Badge>
+                    <Badge variant="secondary">
+                      {propertyTypeLabels[item.propertyType]}
+                    </Badge>
                   </TableCell>
-                  <TableCell>{item.referenceCode ?? "—"}</TableCell>
-                  <TableCell>
-                    {item.areaSqm != null ? `${item.areaSqm} m²` : "—"}
-                  </TableCell>
-                  <TableCell className="space-x-2 text-right">
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/properties/${item.id}`}>Open</Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => void onDelete(item.id)}
-                    >
-                      Delete
-                    </Button>
+                  <TableCell dir="ltr">{item.referenceCode ?? messages.none}</TableCell>
+                  <TableCell>{formatArea(item.areaSqm)}</TableCell>
+                  <TableCell className="text-end">
+                    <div className="flex justify-end gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/properties/${item.id}`}>{messages.open}</Link>
+                      </Button>
+                      <Button asChild size="sm" variant="secondary">
+                        <Link href={`/properties/${item.id}/edit`}>{messages.edit}</Link>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => void onDelete(item.id)}
+                      >
+                        {messages.delete}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

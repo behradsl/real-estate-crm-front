@@ -98,6 +98,22 @@ export interface DeedInfo {
   updatedAt: string;
 }
 
+export interface RelatedContract {
+  id: string;
+  organizationId: string;
+  propertyId: string;
+  contractType: ContractType;
+  contractNumber: string;
+  description: string | null;
+  totalAmount: string | null;
+  monthlyAmount: string | null;
+  depositAmount: string | null;
+  signedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  role?: ContractPartyRole;
+}
+
 export interface Property {
   id: string;
   organizationId: string;
@@ -128,6 +144,7 @@ export interface Property {
   otherFacilities: OtherFacility[] | null;
   referenceCode: string | null;
   deedInfo: DeedInfo | null;
+  contracts?: RelatedContract[];
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -152,6 +169,7 @@ export interface Party {
   email: string | null;
   addressId: string | null;
   address: Address | null;
+  contracts?: RelatedContract[];
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -229,6 +247,15 @@ export interface CreateOrganizationInput {
     lastName: string;
     phone?: string;
   };
+}
+
+export interface UpdateOrganizationInput {
+  name?: string;
+  slug?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  address?: AddressInput;
 }
 
 export interface CreateUserInput {

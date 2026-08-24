@@ -11,6 +11,7 @@ import type {
   Organization,
   Party,
   Property,
+  UpdateOrganizationInput,
   User,
   ContractSignature,
 } from "./types";
@@ -34,6 +35,11 @@ export const organizationsApi = {
       method: "POST",
       body: JSON.stringify(input),
     }),
+  update: (id: string, input: UpdateOrganizationInput) =>
+    apiFetch<Organization>(`/organizations/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
 };
 
 export const usersApi = {
@@ -42,6 +48,19 @@ export const usersApi = {
   create: (input: CreateUserInput) =>
     apiFetch<User>("/users", {
       method: "POST",
+      body: JSON.stringify(input),
+    }),
+  update: (
+    id: string,
+    input: Partial<
+      Omit<CreateUserInput, "organizationId" | "password"> & {
+        password?: string;
+        isActive?: boolean;
+      }
+    >,
+  ) =>
+    apiFetch<User>(`/users/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(input),
     }),
   remove: (id: string) =>

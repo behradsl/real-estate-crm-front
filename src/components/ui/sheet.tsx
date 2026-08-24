@@ -48,7 +48,7 @@ function SheetOverlay({
 function SheetContent({
   className,
   children,
-  side = "right",
+  side = "left",
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
@@ -72,12 +72,11 @@ function SheetContent({
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
             <Button
               variant="ghost"
-              className="absolute top-3 right-3"
+              className="absolute top-3 end-3"
               size="icon-sm"
             >
-              <XIcon
-              />
-              <span className="sr-only">Close</span>
+              <XIcon />
+              <span className="sr-only">بستن</span>
             </Button>
           </SheetPrimitive.Close>
         )}

@@ -8,6 +8,7 @@ import { usersApi } from "@/lib/api";
 import type { User, UserRole } from "@/lib/api/types";
 import { ApiError } from "@/lib/api/client";
 import { USER_ROLES } from "@/lib/examples";
+import { messages, userRoleLabels } from "@/lib/labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ export default function UsersPage() {
   const [items, setItems] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("password123");
   const [firstName, setFirstName] = useState("");
@@ -51,7 +53,7 @@ export default function UsersPage() {
     try {
       setItems(await usersApi.list());
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Failed to load");
+      toast.error(error instanceof ApiError ? error.message : messages.loadFailed);
     } finally {
       setLoading(false);
     }
@@ -63,65 +65,101 @@ export default function UsersPage() {
 
   if (!hasRole("ADMIN", "OWNER")) {
     return (
-      <p className="text-sm text-muted-foreground">
-        You do not have access to user management.
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        به بخش مدیریت کاربران دسترسی ندارید.
       </p>
     );
   }
 
-  async function onCreate(event: FormEvent) {
+  function resetForm() {
+    setEditingId(null);
+    setEmail("");
+    setPassword("password123");
+    setFirstName("");
+    setLastName("");
+    setRole("AGENT");
+    setOrganizationId("");
+  }
+
+  function startEdit(item: User) {
+    setEditingId(item.id);
+    setEmail(item.email);
+    setPassword("");
+    setFirstName(item.firstName);
+    setLastName(item.lastName);
+    setRole(item.role);
+    setOrganizationId(item.organizationId ?? "");
+  }
+
+  async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setSubmitting(true);
     try {
-      await usersApi.create({
-        email,
-        password,
-        firstName,
-        lastName,
-        role,
-        organizationId:
-          hasRole("ADMIN") && role !== "ADMIN"
-            ? emptyToUndefined(organizationId) ?? user?.organizationId ?? undefined
-            : undefined,
-      });
-      toast.success("User created");
-      setEmail("");
-      setFirstName("");
-      setLastName("");
+      if (editingId) {
+        await usersApi.update(editingId, {
+          email,
+          firstName,
+          lastName,
+          role,
+          password: emptyToUndefined(password),
+        });
+        toast.success("تغییرات کاربر ذخیره شد");
+      } else {
+        await usersApi.create({
+          email,
+          password,
+          firstName,
+          lastName,
+          role,
+          organizationId:
+            hasRole("ADMIN") && role !== "ADMIN"
+              ? emptyToUndefined(organizationId) ?? user?.organizationId ?? undefined
+              : undefined,
+        });
+        toast.success("کاربر ثبت شد");
+      }
+      resetForm();
       await load();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Create failed");
+      toast.error(
+        error instanceof ApiError
+          ? error.message
+          : editingId
+            ? messages.saveFailed
+            : messages.createFailed,
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Delete this user?")) return;
+    if (!confirm("این کاربر حذف شود؟")) return;
     try {
       await usersApi.remove(id);
-      toast.success("User deleted");
+      toast.success("کاربر حذف شد");
+      if (editingId === id) resetForm();
       await load();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : "Delete failed");
+      toast.error(error instanceof ApiError ? error.message : messages.deleteFailed);
     }
   }
 
   return (
     <div>
       <PageHeader
-        title="Users"
-        description="ADMIN and OWNER can create employees."
+        title="کاربران"
+        description="مدیر سامانه و مالک آژانس می‌توانند کارکنان را ثبت کنند."
       />
 
-      <Card className="mb-6">
+      <Card className="mb-8">
         <CardHeader>
-          <CardTitle className="text-base">Create user</CardTitle>
+          <CardTitle>{editingId ? "ویرایش کاربر" : "ثبت کاربر"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-4 md:grid-cols-2" onSubmit={onCreate}>
+          <form className="grid gap-5 md:grid-cols-2" onSubmit={onSubmit}>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>ایمیل</Label>
               <Input
                 type="email"
                 value={email}
@@ -130,17 +168,19 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Password</Label>
+              <Label>
+                {editingId ? "رمز عبور جدید (اختیاری)" : "رمز عبور"}
+              </Label>
               <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
+                required={!editingId}
+                minLength={editingId ? undefined : 8}
               />
             </div>
             <div className="space-y-2">
-              <Label>First name</Label>
+              <Label>نام</Label>
               <Input
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -148,7 +188,7 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Last name</Label>
+              <Label>نام خانوادگی</Label>
               <Input
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -156,12 +196,12 @@ export default function UsersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>نقش</Label>
               <Select
                 value={role}
                 onValueChange={(v) => setRole(v as UserRole)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -169,46 +209,58 @@ export default function UsersPage() {
                     hasRole("ADMIN") ? true : r !== "ADMIN",
                   ).map((r) => (
                     <SelectItem key={r} value={r}>
-                      {r}
+                      {userRoleLabels[r]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            {hasRole("ADMIN") && role !== "ADMIN" ? (
+            {!editingId && hasRole("ADMIN") && role !== "ADMIN" ? (
               <div className="space-y-2">
-                <Label>Organization id</Label>
+                <Label>شناسه سازمان</Label>
                 <Input
                   value={organizationId}
                   onChange={(e) => setOrganizationId(e.target.value)}
-                  placeholder="Required when ADMIN creates org users"
+                  placeholder="برای ایجاد کاربر آژانس الزامی است"
                   required
+                  dir="ltr"
                 />
               </div>
             ) : null}
-            <div className="md:col-span-2">
+            <div className="flex flex-wrap gap-2 md:col-span-2">
               <Button disabled={submitting} type="submit">
-                {submitting ? "Creating…" : "Create user"}
+                {submitting
+                  ? messages.saving
+                  : editingId
+                    ? messages.save
+                    : "ثبت کاربر"}
               </Button>
+              {editingId ? (
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  انصراف
+                </Button>
+              ) : null}
             </div>
           </form>
         </CardContent>
       </Card>
 
-      <div className="rounded-xl border">
+      <div className="overflow-hidden rounded-xl border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>نام</TableHead>
+              <TableHead>ایمیل</TableHead>
+              <TableHead>نقش</TableHead>
+              <TableHead className="text-end">{messages.actions}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4}>Loading…</TableCell>
+                <TableCell colSpan={4} className="text-muted-foreground">
+                  {messages.loading}
+                </TableCell>
               </TableRow>
             ) : (
               items.map((item) => (
@@ -216,18 +268,27 @@ export default function UsersPage() {
                   <TableCell className="font-medium">
                     {item.firstName} {item.lastName}
                   </TableCell>
-                  <TableCell>{item.email}</TableCell>
+                  <TableCell dir="ltr">{item.email}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{item.role}</Badge>
+                    <Badge variant="secondary">{userRoleLabels[item.role]}</Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => void onDelete(item.id)}
-                    >
-                      Delete
-                    </Button>
+                  <TableCell className="text-end">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => startEdit(item)}
+                      >
+                        {messages.edit}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => void onDelete(item.id)}
+                      >
+                        {messages.delete}
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

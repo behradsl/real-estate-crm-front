@@ -7,6 +7,8 @@ import { contractsApi } from "@/lib/api";
 import { ApiError } from "@/lib/api/client";
 import type { ContractType, Party } from "@/lib/api/types";
 import { CONTRACT_TYPES } from "@/lib/examples";
+import { contractTypeLabels, messages } from "@/lib/labels";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   WIZARD_STEPS,
   buildCreateContractPayload,
@@ -42,9 +44,18 @@ function stepIndex(step: WizardStep) {
   return WIZARD_STEPS.findIndex((s) => s.id === step);
 }
 
-export function ContractWizard() {
+export function ContractWizard({
+  contractId,
+  initialState,
+}: {
+  contractId?: string;
+  initialState?: ContractWizardState;
+} = {}) {
   const router = useRouter();
-  const [state, setState] = useState<ContractWizardState>(createInitialWizardState);
+  const isEdit = Boolean(contractId);
+  const [state, setState] = useState<ContractWizardState>(
+    () => initialState ?? createInitialWizardState(),
+  );
   const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState<ContractPreviewMode>("full");
 
@@ -68,25 +79,25 @@ export function ContractWizard() {
 
   function validateCurrent(): string | null {
     if (state.step === "basics") {
-      if (!state.contractNumber.trim()) return "Contract number is required";
+      if (!state.contractNumber.trim()) return "وارد کردن شماره قرارداد الزامی است";
     }
     if (state.step === "property") {
-      if (!state.propertyId) return "Select or create a property";
+      if (!state.propertyId) return "یک ملک را انتخاب یا ثبت کنید";
     }
     if (state.step === "parties") {
       if (!state.firstPartyId || !state.secondPartyId) {
-        return "Select first and second parties";
+        return "طرف اول و طرف دوم را انتخاب کنید";
       }
       if (state.firstPartyId === state.secondPartyId) {
-        return "First and second party must be different";
+        return "طرف اول و طرف دوم باید متفاوت باشند";
       }
     }
     if (state.step === "terms") {
       if (state.contractType === "SALE" && !state.sale.totalRials.trim()) {
-        return "Sale total amount is required";
+        return "وارد کردن مبلغ کل مبایعه‌نامه الزامی است";
       }
       if (state.contractType === "RENT" && !state.rent.monthlyRials.trim()) {
-        return "Monthly rent is required";
+        return "وارد کردن اجاره ماهانه الزامی است";
       }
     }
     return null;
@@ -108,16 +119,23 @@ export function ContractWizard() {
       return;
     }
     if (!state.propertyId || !state.firstPartyId || !state.secondPartyId) {
-      toast.error("Complete previous steps first");
+      toast.error("ابتدا مراحل قبلی را تکمیل کنید");
       return;
     }
     setSaving(true);
     try {
-      const created = await contractsApi.create(buildCreateContractPayload(state));
-      toast.success("Contract saved");
-      router.push(`/contracts/${created.id}`);
+      const payload = buildCreateContractPayload(state);
+      if (isEdit && contractId) {
+        await contractsApi.update(contractId, payload);
+        toast.success("تغییرات قرارداد ذخیره شد");
+        router.push(`/contracts/${contractId}`);
+      } else {
+        const created = await contractsApi.create(payload);
+        toast.success("قرارداد ذخیره شد");
+        router.push(`/contracts/${created.id}`);
+      }
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : "Save failed");
+      toast.error(err instanceof ApiError ? err.message : "ذخیره قرارداد انجام نشد");
     } finally {
       setSaving(false);
     }
@@ -149,8 +167,12 @@ export function ContractWizard() {
   return (
     <div>
       <PageHeader
-        title="New contract"
-        description="Step-by-step registration with typed terms and PDF preview/print."
+        title={isEdit ? "ویرایش قرارداد" : "قرارداد جدید"}
+        description={
+          isEdit
+            ? "شرایط، طرفین و مبالغ قرارداد را به‌روزرسانی کنید."
+            : "ثبت گام‌به‌گام با شرایط مالی و پیش‌نمایش چاپی قرارداد."
+        }
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
@@ -171,10 +193,10 @@ export function ContractWizard() {
       {state.step === "basics" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Contract basics</CardTitle>
+            <CardTitle>اطلاعات پایه قرارداد</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <Field label="Type">
+          <CardContent className="grid gap-5 md:grid-cols-2">
+            <Field label="نوع قرارداد">
               <Select
                 value={state.contractType}
                 onValueChange={(v) => {
@@ -193,25 +215,25 @@ export function ContractWizard() {
                 <SelectContent>
                   {CONTRACT_TYPES.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type}
+                      {contractTypeLabels[type]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Contract number">
+            <Field label="شماره قرارداد">
               <Input
                 value={state.contractNumber}
                 onChange={(e) => patch({ contractNumber: e.target.value })}
               />
             </Field>
-            <Field label="Description">
+            <Field label="شرح قرارداد">
               <Input
                 value={state.description}
                 onChange={(e) => patch({ description: e.target.value })}
               />
             </Field>
-            <Field label="Commission %">
+            <Field label="درصد کمیسیون">
               <Input
                 type="number"
                 value={state.commissionPercentage}
@@ -220,21 +242,21 @@ export function ContractWizard() {
                 }
               />
             </Field>
-            <Field label="Commission amount (ریال)">
+            <Field label="مبلغ کمیسیون (ریال)">
               <Input
                 type="number"
                 value={state.commissionAmount}
                 onChange={(e) => patch({ commissionAmount: e.target.value })}
               />
             </Field>
-            <Field label="Tax %">
+            <Field label="درصد مالیات">
               <Input
                 type="number"
                 value={state.taxPercentage}
                 onChange={(e) => patch({ taxPercentage: e.target.value })}
               />
             </Field>
-            <Field label="Tax amount (ریال)">
+            <Field label="مبلغ مالیات (ریال)">
               <Input
                 type="number"
                 value={state.taxAmount}
@@ -255,16 +277,16 @@ export function ContractWizard() {
       ) : null}
 
       {state.step === "parties" ? (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <PartyPicker
-            label="First party"
+            label="طرف اول"
             selected={state.firstParty}
             onSelect={(party) =>
               patch({ firstParty: party, firstPartyId: party.id })
             }
           />
           <PartyPicker
-            label="Second party"
+            label="طرف دوم"
             selected={state.secondParty}
             onSelect={(party) =>
               patch({ secondParty: party, secondPartyId: party.id })
@@ -272,11 +294,11 @@ export function ContractWizard() {
           />
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Witnesses (optional)</CardTitle>
+              <CardTitle>شاهدان (اختیاری)</CardTitle>
             </CardHeader>
             <CardContent>
               <PartyPicker
-                label="Add witness"
+                label="افزودن شاهد"
                 selected={null}
                 onSelect={toggleWitness}
               />
@@ -301,13 +323,13 @@ export function ContractWizard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              Terms — {state.contractType}
+              شرایط — {contractTypeLabels[state.contractType]}
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
+          <CardContent className="grid gap-5 md:grid-cols-2">
             {state.contractType === "SALE" ? (
               <>
-                <Field label="دانگ (share units)">
+                <Field label="دانگ">
                   <Input
                     value={state.sale.shareUnits}
                     onChange={(e) =>
@@ -450,7 +472,7 @@ export function ContractWizard() {
 
             {state.contractType === "RENT" ? (
               <>
-                <Field label="دانگ (share units)">
+                <Field label="دانگ">
                   <Input
                     value={state.rent.shareUnits}
                     onChange={(e) =>
@@ -594,7 +616,7 @@ export function ContractWizard() {
               <>
                 {(state.contractType === "GOODWILL" ||
                   state.contractType === "CONSTRUCTION_JOINT_VENTURE") && (
-                  <Field label="دانگ (share units)">
+                  <Field label="دانگ">
                     <Input
                       value={state.generic.shareUnits}
                       onChange={(e) =>
@@ -711,10 +733,10 @@ export function ContractWizard() {
       ) : null}
 
       {state.step === "review" ? (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">PDF preview & print</CardTitle>
+              <CardTitle>پیش‌نمایش و چاپ</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <Button
@@ -722,24 +744,24 @@ export function ContractWizard() {
                 variant={previewMode === "full" ? "default" : "outline"}
                 onClick={() => setPreviewMode("full")}
               >
-                Full preview
+                پیش‌نمایش کامل
               </Button>
               <Button
                 type="button"
                 variant={previewMode === "print-only" ? "default" : "outline"}
                 onClick={() => setPreviewMode("print-only")}
               >
-                Print only
+                فقط چاپ فیلدها
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => printNow(previewMode)}
               >
-                Print
+                {messages.print}
               </Button>
               <Button type="button" disabled={saving} onClick={() => void onSave()}>
-                {saving ? "Saving…" : "Save contract"}
+                {saving ? messages.saving : "ذخیره قرارداد"}
               </Button>
             </CardContent>
           </Card>
@@ -750,22 +772,24 @@ export function ContractWizard() {
         </div>
       ) : null}
 
-      <div className="mt-6 flex justify-between">
+      <div className="mt-8 flex justify-between">
         <Button
           type="button"
           variant="outline"
           disabled={state.step === "basics"}
           onClick={back}
         >
-          Back
+          <ChevronRight className="size-4" />
+          {messages.back}
         </Button>
         {state.step !== "review" ? (
           <Button type="button" onClick={onNext}>
-            Next
+            {messages.next}
+            <ChevronLeft className="size-4" />
           </Button>
         ) : (
           <Button type="button" disabled={saving} onClick={() => void onSave()}>
-            {saving ? "Saving…" : "Save contract"}
+            {saving ? messages.saving : "ذخیره قرارداد"}
           </Button>
         )}
       </div>
