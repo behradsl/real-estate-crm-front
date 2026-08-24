@@ -149,25 +149,19 @@
     box-shadow: none !important;
   }
 
-  .contract-doc,
   .contract-preview-overlay {
     box-shadow: none !important;
     max-width: none !important;
     width: 210mm !important;
-    min-height: 297mm !important;
   }
 
-  html[data-contract-print="overlay"] .contract-preview-full,
-  html[data-contract-print="overlay-blank"] .contract-preview-full {
-    display: none !important;
-  }
-
-  html[data-contract-print="full"] .contract-preview-overlay {
-    display: none !important;
+  /* Print-only: hide the PDF canvas, keep field overlay */
+  html[data-contract-print="print-only"] .contract-pdf-layer {
+    visibility: hidden !important;
   }
 
   @page {
     size: A4;
-    margin: 8mm;
+    margin: 0;
   }
 }

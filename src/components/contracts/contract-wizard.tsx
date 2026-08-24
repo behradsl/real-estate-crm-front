@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { contractsApi } from "@/lib/api";
@@ -21,11 +21,10 @@ import {
   PropertyPicker,
 } from "@/components/contracts/entity-pickers";
 import {
-  GenericDocument,
-  RentDocument,
-  SaleDocument,
-} from "@/components/contracts/documents";
-import { ContractPreview } from "@/components/contracts/contract-preview";
+  ContractPreview,
+  printContract,
+} from "@/components/contracts/contract-preview";
+import type { ContractPreviewMode } from "@/lib/contracts/templates";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,8 +38,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-type PreviewMode = "full" | "overlay" | "overlay-blank";
-
 function stepIndex(step: WizardStep) {
   return WIZARD_STEPS.findIndex((s) => s.id === step);
 }
@@ -49,13 +46,7 @@ export function ContractWizard() {
   const router = useRouter();
   const [state, setState] = useState<ContractWizardState>(createInitialWizardState);
   const [saving, setSaving] = useState(false);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>("full");
-
-  const documentNode = useMemo(() => {
-    if (state.contractType === "SALE") return <SaleDocument state={state} />;
-    if (state.contractType === "RENT") return <RentDocument state={state} />;
-    return <GenericDocument state={state} />;
-  }, [state]);
+  const [previewMode, setPreviewMode] = useState<ContractPreviewMode>("full");
 
   function patch(partial: Partial<ContractWizardState>) {
     setState((prev) => ({ ...prev, ...partial }));
@@ -132,13 +123,9 @@ export function ContractWizard() {
     }
   }
 
-  function printNow(mode: PreviewMode) {
+  function printNow(mode: ContractPreviewMode) {
     setPreviewMode(mode);
-    window.document.documentElement.setAttribute("data-contract-print", mode);
-    window.setTimeout(() => {
-      window.print();
-      window.document.documentElement.removeAttribute("data-contract-print");
-    }, 50);
+    printContract(mode);
   }
 
   function toggleWitness(party: Party) {
@@ -163,7 +150,7 @@ export function ContractWizard() {
     <div>
       <PageHeader
         title="New contract"
-        description="Step-by-step registration with typed terms and printable HTML preview."
+        description="Step-by-step registration with typed terms and PDF preview/print."
       />
 
       <div className="mb-6 flex flex-wrap gap-2">
@@ -691,7 +678,7 @@ export function ContractWizard() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Preview & print</CardTitle>
+              <CardTitle className="text-base">PDF preview & print</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <Button
@@ -699,24 +686,21 @@ export function ContractWizard() {
                 variant={previewMode === "full" ? "default" : "outline"}
                 onClick={() => setPreviewMode("full")}
               >
-                Full HTML
+                Full preview
               </Button>
               <Button
                 type="button"
-                variant={previewMode === "overlay" ? "default" : "outline"}
-                onClick={() => setPreviewMode("overlay")}
+                variant={previewMode === "print-only" ? "default" : "outline"}
+                onClick={() => setPreviewMode("print-only")}
               >
-                Overlay on form
+                Print only
               </Button>
               <Button
                 type="button"
-                variant={previewMode === "overlay-blank" ? "default" : "outline"}
-                onClick={() => setPreviewMode("overlay-blank")}
+                variant="secondary"
+                onClick={() => printNow(previewMode)}
               >
-                Blank-paper fields
-              </Button>
-              <Button type="button" variant="secondary" onClick={() => printNow(previewMode)}>
-                Print / Save PDF
+                Print
               </Button>
               <Button type="button" disabled={saving} onClick={() => void onSave()}>
                 {saving ? "Saving…" : "Save contract"}
@@ -725,9 +709,7 @@ export function ContractWizard() {
           </Card>
 
           <div id="contract-print-root" className="rounded-xl border bg-muted/30 p-4">
-            <ContractPreview state={state} mode={previewMode}>
-              {documentNode}
-            </ContractPreview>
+            <ContractPreview state={state} mode={previewMode} />
           </div>
         </div>
       ) : null}

@@ -8,26 +8,23 @@ import { contractsApi } from "@/lib/api";
 import type { Contract } from "@/lib/api/types";
 import { ApiError } from "@/lib/api/client";
 import { contractToWizardState } from "@/lib/contracts/from-contract";
+import type { ContractPreviewMode } from "@/lib/contracts/templates";
 import {
-  GenericDocument,
-  RentDocument,
-  SaleDocument,
-} from "@/components/contracts/documents";
-import { ContractPreview } from "@/components/contracts/contract-preview";
+  ContractPreview,
+  printContract,
+} from "@/components/contracts/contract-preview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type PreviewMode = "full" | "overlay" | "overlay-blank";
-
 export default function ContractDetailPage() {
   const params = useParams<{ id: string }>();
   const [item, setItem] = useState<Contract | null>(null);
   const [partyId, setPartyId] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>("full");
+  const [previewMode, setPreviewMode] = useState<ContractPreviewMode>("full");
 
   async function load() {
     try {
@@ -48,17 +45,6 @@ export default function ContractDetailPage() {
     () => (item ? contractToWizardState(item) : null),
     [item],
   );
-
-  const documentNode = useMemo(() => {
-    if (!wizardState) return null;
-    if (wizardState.contractType === "SALE") {
-      return <SaleDocument state={wizardState} />;
-    }
-    if (wizardState.contractType === "RENT") {
-      return <RentDocument state={wizardState} />;
-    }
-    return <GenericDocument state={wizardState} />;
-  }, [wizardState]);
 
   async function addSignature(event: React.FormEvent) {
     event.preventDefault();
@@ -85,16 +71,12 @@ export default function ContractDetailPage() {
     }
   }
 
-  function printNow(mode: PreviewMode) {
+  function printNow(mode: ContractPreviewMode) {
     setPreviewMode(mode);
-    window.document.documentElement.setAttribute("data-contract-print", mode);
-    window.setTimeout(() => {
-      window.print();
-      window.document.documentElement.removeAttribute("data-contract-print");
-    }, 80);
+    printContract(mode);
   }
 
-  if (!item || !wizardState || !documentNode) {
+  if (!item || !wizardState) {
     return <p className="text-sm text-muted-foreground">Loading…</p>;
   }
 
@@ -119,9 +101,9 @@ export default function ContractDetailPage() {
         )}
       </div>
 
-      <Card className="mb-4">
+      <Card className="mb-4 print:hidden">
         <CardHeader>
-          <CardTitle className="text-base">Document actions</CardTitle>
+          <CardTitle className="text-base">PDF preview & print</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button
@@ -129,28 +111,21 @@ export default function ContractDetailPage() {
             variant={previewMode === "full" ? "default" : "outline"}
             onClick={() => setPreviewMode("full")}
           >
-            Full HTML
+            Full preview
           </Button>
           <Button
             type="button"
-            variant={previewMode === "overlay" ? "default" : "outline"}
-            onClick={() => setPreviewMode("overlay")}
+            variant={previewMode === "print-only" ? "default" : "outline"}
+            onClick={() => setPreviewMode("print-only")}
           >
-            Overlay on form
-          </Button>
-          <Button
-            type="button"
-            variant={previewMode === "overlay-blank" ? "default" : "outline"}
-            onClick={() => setPreviewMode("overlay-blank")}
-          >
-            Blank-paper fields
+            Print only
           </Button>
           <Button
             type="button"
             variant="secondary"
             onClick={() => printNow(previewMode)}
           >
-            Print / Save PDF
+            Print
           </Button>
         </CardContent>
       </Card>
@@ -159,9 +134,7 @@ export default function ContractDetailPage() {
         id="contract-print-root"
         className="mb-6 rounded-xl border bg-muted/30 p-4"
       >
-        <ContractPreview state={wizardState} mode={previewMode}>
-          {documentNode}
-        </ContractPreview>
+        <ContractPreview state={wizardState} mode={previewMode} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 print:hidden">

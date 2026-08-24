@@ -1,7 +1,12 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import type { ContractWizardState } from "@/lib/contracts/wizard";
-import { partyDisplayName, templateBackground } from "@/lib/contracts/wizard";
+import { partyDisplayName } from "@/lib/contracts/wizard";
+import {
+  templatePdfUrl,
+  type ContractPreviewMode,
+} from "@/lib/contracts/templates";
 
 /**
  * Absolute % positions approximate the union form blanks.
@@ -20,9 +25,10 @@ function Field({
   children: React.ReactNode;
   className?: string;
 }) {
+  if (children == null || children === "") return null;
   return (
     <div
-      className={`absolute text-[10px] leading-none text-black ${className}`}
+      className={`absolute text-[10px] leading-tight text-black ${className}`}
       style={{
         top: `${top}%`,
         left: `${left}%`,
@@ -144,37 +150,110 @@ export function OverlayFields({ state }: { state: ContractWizardState }) {
   );
 }
 
+function PdfPageCanvas({ url }: { url: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function render() {
+      setLoading(true);
+      setError(null);
+      try {
+        const pdfjs = await import("pdfjs-dist");
+        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
+        const pdf = await pdfjs.getDocument({ url }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.5 });
+        const canvas = canvasRef.current;
+        if (!canvas || cancelled) return;
+
+        const context = canvas.getContext("2d");
+        if (!context) return;
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({
+          canvas,
+          canvasContext: context,
+          viewport,
+        }).promise;
+        if (!cancelled) setLoading(false);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load PDF");
+          setLoading(false);
+        }
+      }
+    }
+
+    void render();
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return (
+    <div className="relative w-full">
+      {loading ? (
+        <div className="flex aspect-[210/297] items-center justify-center text-sm text-muted-foreground">
+          Loading PDF…
+        </div>
+      ) : null}
+      {error ? (
+        <div className="flex aspect-[210/297] items-center justify-center p-4 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+      <canvas
+        ref={canvasRef}
+        className={`block h-auto w-full ${loading || error ? "hidden" : ""}`}
+      />
+    </div>
+  );
+}
+
 export function ContractPreview({
   state,
   mode,
-  children,
 }: {
   state: ContractWizardState;
-  mode: "full" | "overlay" | "overlay-blank";
-  children: React.ReactNode;
+  mode: ContractPreviewMode;
 }) {
-  const bg = templateBackground(state.contractType);
-
-  if (mode === "full") {
-    return <div className="contract-preview-full">{children}</div>;
-  }
+  const pdfUrl = templatePdfUrl(state.contractType);
+  const showPdf = mode === "full";
 
   return (
     <div
-      className="contract-preview-overlay relative mx-auto aspect-[210/297] w-full max-w-[210mm] overflow-hidden bg-white shadow-sm"
+      className="contract-preview-overlay relative mx-auto w-full max-w-[210mm] overflow-hidden bg-white shadow-sm"
       data-print-mode={mode}
     >
-      {mode === "overlay" && bg ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={bg}
-          alt=""
-          className="pointer-events-none absolute inset-0 h-full w-full object-fill"
-        />
-      ) : null}
-      <div className="absolute inset-0">
+      {showPdf && pdfUrl ? (
+        <div className="contract-pdf-layer">
+          <PdfPageCanvas url={pdfUrl} />
+        </div>
+      ) : (
+        <div className="aspect-[210/297] w-full bg-white" />
+      )}
+      <div className="pointer-events-none absolute inset-0" dir="rtl">
         <OverlayFields state={state} />
       </div>
+      {!pdfUrl && showPdf ? (
+        <p className="absolute inset-x-0 top-4 text-center text-sm text-muted-foreground">
+          No PDF template for this contract type.
+        </p>
+      ) : null}
     </div>
   );
+}
+
+export function printContract(mode: ContractPreviewMode) {
+  window.document.documentElement.setAttribute("data-contract-print", mode);
+  window.setTimeout(() => {
+    window.print();
+    window.document.documentElement.removeAttribute("data-contract-print");
+  }, 80);
 }

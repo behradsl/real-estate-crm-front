@@ -52,7 +52,7 @@ export default function ContractsPage() {
     <div>
       <PageHeader
         title="Contracts"
-        description="Step-by-step wizard with typed terms, HTML preview, and print modes."
+        description="Step-by-step wizard with typed terms and PDF preview/print."
         actionHref="/contracts/new"
         actionLabel="New contract"
       />

@@ -320,22 +320,3 @@ export function partyDisplayName(party: Party | null | undefined): string {
     [party.firstName, party.lastName].filter(Boolean).join(" ") || "شخص"
   );
 }
-
-export function templateBackground(type: ContractType): string | null {
-  switch (type) {
-    case "SALE":
-      return "/contracts/sale.jpg";
-    case "RENT":
-      return "/contracts/rent.jpg";
-    case "GOODWILL":
-      return "/contracts/goodwill.jpg";
-    case "PRE_SALE":
-      return "/contracts/pre-sale.jpg";
-    case "MUTUAL_RESCISSION":
-      return "/contracts/mutual-rescission.jpg";
-    case "CONSTRUCTION_JOINT_VENTURE":
-      return "/contracts/construction-jv.jpg";
-    default:
-      return null;
-  }
-}
