@@ -46,6 +46,10 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, hasRole } = useAuth();
+  const brandName =
+    user && user.role !== "ADMIN" && user.organization?.name
+      ? user.organization.name
+      : messages.appName;
 
   async function handleLogout() {
     await logout();
@@ -57,7 +61,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex items-start justify-between gap-3 border-b border-sidebar-border px-4 py-5">
         <div>
           <p className="text-xs font-medium text-sidebar-foreground/70">
-            {messages.appName}
+            {brandName}
           </p>
           <p className="mt-1 text-sm font-semibold leading-relaxed">
             {messages.appTagline}

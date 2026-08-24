@@ -57,9 +57,16 @@ export interface OtherFacility {
   kind: string;
 }
 
+export interface UserOrganizationSummary {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface User {
   id: string;
   organizationId: string | null;
+  organization?: UserOrganizationSummary | null;
   email: string;
   firstName: string;
   lastName: string;

@@ -15,11 +15,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileNav, setMobileNav] = useState(false);
 
+  const brandName =
+    user && user.role !== "ADMIN" && user.organization?.name
+      ? user.organization.name
+      : messages.appName;
+
   useEffect(() => {
     if (!loading && !user) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
   }, [loading, user, router, pathname]);
+
+  useEffect(() => {
+    document.title = brandName;
+  }, [brandName]);
 
   if (loading) {
     return (
@@ -53,7 +62,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <AppSidebar onNavigate={() => setMobileNav(false)} />
             </SheetContent>
           </Sheet>
-          <p className="font-heading text-sm font-semibold">{messages.appName}</p>
+          <p className="font-heading text-sm font-semibold">{brandName}</p>
         </header>
 
         <main className="flex-1 overflow-auto">
