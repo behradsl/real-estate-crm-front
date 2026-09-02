@@ -1,5 +1,6 @@
 import type {
   Contract,
+  ContractLawyer,
   ContractType,
   JsonObject,
   Party,
@@ -35,6 +36,10 @@ function asRecord(value: unknown): JsonObject {
     : {};
 }
 
+function hasKeys(value: unknown): boolean {
+  return Object.keys(asRecord(value)).length > 0;
+}
+
 function str(value: unknown): string {
   return value == null ? "" : String(value);
 }
@@ -53,6 +58,41 @@ function hydrateLawyer(raw: unknown): LawyerForm {
     address: str(r.address),
     postalCode: str(r.postalCode),
     cause: str(r.cause),
+  };
+}
+
+function lawyerBySide(
+  lawyers: ContractLawyer[] | undefined,
+  side: "FIRST_PARTY" | "SECOND_PARTY",
+): ContractLawyer | undefined {
+  return lawyers?.find((l) => l.side === side);
+}
+
+function hydrateSaleFromTyped(
+  details: JsonObject,
+  contract: Contract,
+  notes: string,
+): SaleTermsForm {
+  return {
+    ...defaultSaleTerms(),
+    shareUnits: str(details.shareUnits ?? defaultSaleTerms().shareUnits),
+    totalAmount: str(details.totalAmount ?? contract.totalAmount),
+    totalInWords: str(details.totalInWords),
+    prePaymentAmount: str(details.prePaymentAmount),
+    prePaymentChequeNumber: str(details.prePaymentChequeNumber),
+    prePaymentBankName: str(details.prePaymentBankName),
+    prePaymentBankBranch: str(details.prePaymentBankBranch),
+    remainderAmount: str(details.remainderAmount),
+    voucherRegistrationDate: str(details.voucherRegistrationDate),
+    voucherOrganizationNumber: str(details.voucherOrganizationNumber),
+    deliveryDate: str(details.deliveryDate ?? contract.deliveryDate),
+    cancelationPenalty: str(details.cancelationPenalty),
+    breachPenalty: str(details.breachPenalty),
+    notaryFeePayer: str(details.notaryFeePayer),
+    delayPenaltyFirstPartyPerDay: str(details.delayPenaltyFirstPartyPerDay),
+    delayPenaltySecondPartyPerDay: str(details.delayPenaltySecondPartyPerDay),
+    pricePerSqm: str(details.pricePerSqm),
+    notes,
   };
 }
 
@@ -83,7 +123,7 @@ function hydrateSale(terms: JsonObject, contract: Contract): SaleTermsForm {
         delayPenaltyFirstPartyPerDay: str(sale.delayPenaltyFirstPartyPerDay),
         delayPenaltySecondPartyPerDay: str(sale.delayPenaltySecondPartyPerDay),
         pricePerSqm: str(property.pricePerSqm),
-        notes: str(terms.notes),
+        notes: str(terms.notes ?? contract.notes),
       };
     }
   }
@@ -115,7 +155,39 @@ function hydrateSale(terms: JsonObject, contract: Contract): SaleTermsForm {
     delayPenaltyFirstPartyPerDay: str(penalties.delayPenaltyPerDayRials),
     delayPenaltySecondPartyPerDay: str(penalties.delayPenaltyPerDayRials),
     pricePerSqm: "",
-    notes: str(terms.notes),
+    notes: str(terms.notes ?? contract.notes),
+  };
+}
+
+function hydrateRentFromTyped(
+  details: JsonObject,
+  contract: Contract,
+  notes: string,
+): RentTermsForm {
+  return {
+    ...defaultRentTerms(),
+    shareUnits: str(details.shareUnits ?? defaultRentTerms().shareUnits),
+    durationMonths: str(details.durationMonths),
+    fromDate: str(details.fromDate ?? contract.startDate),
+    toDate: str(details.toDate ?? contract.endDate),
+    monthlyAmount: str(details.monthlyAmount ?? contract.monthlyAmount),
+    monthlyInWords: str(details.monthlyInWords),
+    mortgageAmount: str(details.mortgageAmount ?? contract.depositAmount),
+    mortgageInWords: str(details.mortgageInWords),
+    totalInWords: str(details.totalInWords),
+    prePaymentAmount: str(details.prePaymentAmount),
+    prePaymentChequeNumber: str(details.prePaymentChequeNumber),
+    prePaymentBankName: str(details.prePaymentBankName),
+    prePaymentBankBranch: str(details.prePaymentBankBranch),
+    remainderAmount: str(details.remainderAmount),
+    remainderDueDate: str(details.remainderDueDate),
+    deliveryDate: str(details.deliveryDate ?? contract.deliveryDate),
+    cancelationPenalty: str(details.cancelationPenalty),
+    breachPenalty: str(details.breachPenalty),
+    notaryFeePayer: str(details.notaryFeePayer),
+    delayPenaltyFirstPartyPerDay: str(details.delayPenaltyFirstPartyPerDay),
+    delayPenaltySecondPartyPerDay: str(details.delayPenaltySecondPartyPerDay),
+    notes,
   };
 }
 
@@ -153,7 +225,7 @@ function hydrateRent(terms: JsonObject, contract: Contract): RentTermsForm {
       notaryFeePayer: str(rent.notaryFeePayer),
       delayPenaltyFirstPartyPerDay: str(rent.delayPenaltyFirstPartyPerDay),
       delayPenaltySecondPartyPerDay: str(rent.delayPenaltySecondPartyPerDay),
-      notes: str(terms.notes),
+      notes: str(terms.notes ?? contract.notes),
     };
   }
 
@@ -183,7 +255,29 @@ function hydrateRent(terms: JsonObject, contract: Contract): RentTermsForm {
     notaryFeePayer: "",
     delayPenaltyFirstPartyPerDay: str(penalties.delayPenaltyPerDayRials),
     delayPenaltySecondPartyPerDay: str(penalties.delayPenaltyPerDayRials),
-    notes: str(terms.notes),
+    notes: str(terms.notes ?? contract.notes),
+  };
+}
+
+function hydrateGoodwillFromTyped(
+  details: JsonObject,
+  contract: Contract,
+  notes: string,
+): GoodwillTermsForm {
+  return {
+    ...defaultGoodwillTerms(),
+    shareUnits: str(details.shareUnits ?? defaultGoodwillTerms().shareUnits),
+    pricePerSqm: str(details.pricePerSqm),
+    totalAmount: str(details.totalAmount ?? contract.totalAmount),
+    prePaymentAmount: str(details.prePaymentAmount),
+    prePaymentChequeNumber: str(details.prePaymentChequeNumber),
+    prePaymentBankName: str(details.prePaymentBankName),
+    prePaymentBankBranch: str(details.prePaymentBankBranch),
+    remainderAmount: str(details.remainderAmount),
+    remainderDueDate: str(details.remainderDueDate),
+    penaltyAmount: str(details.penaltyAmount),
+    deliveryDate: str(details.deliveryDate ?? contract.deliveryDate),
+    notes,
   };
 }
 
@@ -214,7 +308,7 @@ function hydrateGoodwill(
       remainderDueDate: str(goodwill.remainderDueDate),
       penaltyAmount: str(goodwill.penaltyAmount),
       deliveryDate: str(goodwill.deliveryDate ?? contract.deliveryDate),
-      notes: str(terms.notes),
+      notes: str(terms.notes ?? contract.notes),
     };
   }
 
@@ -231,7 +325,64 @@ function hydrateGoodwill(
     remainderDueDate: "",
     penaltyAmount: "",
     deliveryDate: str(schedule.deliveryDueAt ?? contract.deliveryDate),
-    notes: str(terms.notes),
+    notes: str(terms.notes ?? contract.notes),
+  };
+}
+
+function hydratePresaleFromTyped(
+  details: JsonObject,
+  contract: Contract,
+  notes: string,
+): PresaleTermsForm {
+  const base = defaultPresaleTerms();
+  return {
+    ...base,
+    renovationCode: str(details.renovationCode),
+    technicalIdNumber: str(details.technicalIdNumber),
+    insuranceNumber: str(details.insuranceNumber),
+    buildingPermitNumber: str(details.buildingPermitNumber),
+    buildingPermitDate: str(details.buildingPermitDate),
+    equipped: str(details.equipped),
+    totalFloors: str(details.totalFloors),
+    totalUnits: str(details.totalUnits),
+    areaSqm: str(details.areaSqm),
+    storage: str(details.storage),
+    orientation: str(details.orientation),
+    parkingNumberAndArea: str(details.parkingNumberAndArea),
+    flooringType: str(details.flooringType),
+    cabinetAndFaucetType: str(details.cabinetAndFaucetType),
+    bathroomType: str(details.bathroomType),
+    switchOutletType: str(details.switchOutletType),
+    entranceDoorType: str(details.entranceDoorType),
+    interiorDoorType: str(details.interiorDoorType),
+    ceilingPlasterType: str(details.ceilingPlasterType),
+    emergencyWaterSourceType: str(details.emergencyWaterSourceType),
+    heatingType: str(details.heatingType),
+    coolerType: str(details.coolerType),
+    intercomType: str(details.intercomType),
+    cctv: str(details.cctv),
+    tilingType: str(details.tilingType),
+    windowType: str(details.windowType),
+    facadeType: str(details.facadeType),
+    parkingFloorWallCover: str(details.parkingFloorWallCover),
+    lighting: str(details.lighting),
+    balconyCorridorRailing: str(details.balconyCorridorRailing),
+    fireExtinguisher: str(details.fireExtinguisher),
+    elevator: str(details.elevator),
+    waterMotor: str(details.waterMotor),
+    utilitiesScore: str(details.utilitiesScore),
+    loan: str(details.loan),
+    loanType: str(details.loanType),
+    loanInstallmentAmount: str(details.loanInstallmentAmount),
+    totalAmount: str(details.totalAmount ?? contract.totalAmount),
+    totalInWords: str(details.totalInWords),
+    deliveryDate: str(details.deliveryDate ?? contract.deliveryDate),
+    deedTransferDate: str(
+      details.deedTransferDate ?? contract.officialDeedDate,
+    ),
+    selfDeclareFormNumber: str(details.selfDeclareFormNumber),
+    voucherOrganizationNumber: str(details.voucherOrganizationNumber),
+    notes,
   };
 }
 
@@ -292,7 +443,7 @@ function hydratePresale(
       ),
       selfDeclareFormNumber: str(presale.selfDeclareFormNumber),
       voucherOrganizationNumber: str(presale.voucherOrganizationNumber),
-      notes: str(terms.notes),
+      notes: str(terms.notes ?? contract.notes),
     };
   }
 
@@ -303,7 +454,29 @@ function hydratePresale(
     deedTransferDate: str(
       schedule.officialDeedDueAt ?? contract.officialDeedDate,
     ),
-    notes: str(terms.notes),
+    notes: str(terms.notes ?? contract.notes),
+  };
+}
+
+function hydrateRescissionFromTyped(
+  details: JsonObject,
+  contract: Contract,
+  notes: string,
+): RescissionTermsForm {
+  return {
+    ...defaultRescissionTerms(),
+    originalContractNumber: str(details.originalContractNumber),
+    originalContractDate: str(details.originalContractDate),
+    originalAgencyName: str(details.originalAgencyName),
+    shareUnits: str(details.shareUnits ?? defaultRescissionTerms().shareUnits),
+    areaSqm: str(details.areaSqm),
+    county: str(details.county),
+    ownershipNumber: str(details.ownershipNumber),
+    aggregationClause: str(details.aggregationClause),
+    deliveryClause: str(details.deliveryClause),
+    price: str(details.price ?? contract.totalAmount),
+    paymentType: str(details.paymentType),
+    notes,
   };
 }
 
@@ -333,7 +506,7 @@ function hydrateRescission(
       deliveryClause: str(rescission.deliveryClause),
       price: str(rescission.price ?? contract.totalAmount),
       paymentType: str(rescission.paymentType),
-      notes: str(terms.notes),
+      notes: str(terms.notes ?? contract.notes),
     };
   }
 
@@ -341,7 +514,36 @@ function hydrateRescission(
     ...defaultRescissionTerms(),
     shareUnits: str(terms.shareUnits ?? defaultRescissionTerms().shareUnits),
     price: str(financials.totalRials ?? contract.totalAmount),
-    notes: str(terms.notes),
+    notes: str(terms.notes ?? contract.notes),
+  };
+}
+
+function hydrateCjvFromTyped(
+  details: JsonObject,
+  contract: Contract,
+  notes: string,
+): CjvTermsForm {
+  return {
+    ...defaultCjvTerms(),
+    propertyDescription: str(details.propertyDescription),
+    shareUnits: str(details.shareUnits ?? defaultCjvTerms().shareUnits),
+    areaSqm: str(details.areaSqm),
+    totalAmount: str(details.totalAmount ?? contract.totalAmount),
+    totalInWords: str(details.totalInWords),
+    governmentalCosts: str(details.governmentalCosts),
+    constructionCosts: str(details.constructionCosts),
+    facilityRightsCosts: str(details.facilityRightsCosts),
+    destructionCost: str(details.destructionCost),
+    firstPartyShare: str(details.firstPartyShare),
+    secondPartyShare: str(details.secondPartyShare),
+    startDateInWords: str(details.startDateInWords),
+    endDateInWords: str(details.endDateInWords),
+    costDetailsPrepareDate: str(details.costDetailsPrepareDate),
+    voucherTransferDate: str(details.voucherTransferDate),
+    shareUnitsToTransfer: str(details.shareUnitsToTransfer),
+    delayPenaltyFirstPartyPerDay: str(details.delayPenaltyFirstPartyPerDay),
+    delayPenaltySecondPartyPerDay: str(details.delayPenaltySecondPartyPerDay),
+    notes,
   };
 }
 
@@ -373,7 +575,7 @@ function hydrateCjv(terms: JsonObject, contract: Contract): CjvTermsForm {
       shareUnitsToTransfer: str(cjv.shareUnitsToTransfer),
       delayPenaltyFirstPartyPerDay: str(cjv.delayPenaltyFirstPartyPerDay),
       delayPenaltySecondPartyPerDay: str(cjv.delayPenaltySecondPartyPerDay),
-      notes: str(terms.notes),
+      notes: str(terms.notes ?? contract.notes),
     };
   }
 
@@ -381,7 +583,7 @@ function hydrateCjv(terms: JsonObject, contract: Contract): CjvTermsForm {
     ...defaultCjvTerms(),
     shareUnits: str(terms.shareUnits ?? defaultCjvTerms().shareUnits),
     totalAmount: str(financials.totalRials ?? contract.totalAmount),
-    notes: str(terms.notes),
+    notes: str(terms.notes ?? contract.notes),
   };
 }
 
@@ -394,6 +596,10 @@ export function contractToWizardState(contract: Contract): ContractWizardState {
     contract.parties
       ?.filter((p) => p.role === "WITNESS")
       .map((p) => p.party) ?? [];
+
+  const headerNotes = str(contract.notes);
+  const termsNotes = str(terms.notes);
+  const notes = headerNotes || termsNotes;
 
   const base = createInitialWizardState();
   base.step = "review";
@@ -419,37 +625,83 @@ export function contractToWizardState(contract: Contract): ContractWizardState {
 
   const commission = asRecord(terms.commission);
   const contractMeta = asRecord(terms.contract);
-  base.commissionCityRules = str(commission.cityRules);
-  base.commissionFactorNumber = str(commission.factorNumber);
-  base.firstPartyFactorNumber = str(commission.firstPartyFactorNumber);
-  base.secondPartyFactorNumber = str(commission.secondPartyFactorNumber);
-  if (commission.firstPartyAmount != null) {
+
+  base.commissionCityRules = str(
+    contract.commissionCityRules ?? commission.cityRules,
+  );
+  base.commissionFactorNumber = str(
+    contract.commissionFactorNumber ?? commission.factorNumber,
+  );
+  base.firstPartyFactorNumber = str(
+    contract.firstPartyFactorNumber ?? commission.firstPartyFactorNumber,
+  );
+  base.secondPartyFactorNumber = str(
+    contract.secondPartyFactorNumber ?? commission.secondPartyFactorNumber,
+  );
+  if (commission.firstPartyAmount != null && !contract.firstPartyCommissionAmount) {
     base.firstPartyCommissionAmount = str(commission.firstPartyAmount);
   }
-  if (commission.secondPartyAmount != null) {
+  if (commission.secondPartyAmount != null && !contract.secondPartyCommissionAmount) {
     base.secondPartyCommissionAmount = str(commission.secondPartyAmount);
   }
-  base.contractDate = str(contractMeta.date);
-  base.contractTime = str(contractMeta.time);
+  base.contractDate = str(contract.contractDate ?? contractMeta.date);
+  base.contractTime = str(contract.contractTime ?? contractMeta.time);
 
-  const lawyers = asRecord(terms.lawyers);
-  base.lawyers = {
-    firstPartyLawyer: hydrateLawyer(lawyers.firstParty),
-    secondPartyLawyer: hydrateLawyer(lawyers.secondParty),
-  };
+  const firstLawyer = lawyerBySide(contract.lawyers, "FIRST_PARTY");
+  const secondLawyer = lawyerBySide(contract.lawyers, "SECOND_PARTY");
+  if (firstLawyer || secondLawyer) {
+    base.lawyers = {
+      firstPartyLawyer: firstLawyer
+        ? hydrateLawyer(firstLawyer)
+        : defaultLawyerForm(),
+      secondPartyLawyer: secondLawyer
+        ? hydrateLawyer(secondLawyer)
+        : defaultLawyerForm(),
+    };
+  } else {
+    const lawyers = asRecord(terms.lawyers);
+    base.lawyers = {
+      firstPartyLawyer: hydrateLawyer(lawyers.firstParty),
+      secondPartyLawyer: hydrateLawyer(lawyers.secondParty),
+    };
+  }
 
   if (type === "SALE") {
-    base.sale = hydrateSale(terms, contract);
+    base.sale = hasKeys(contract.saleDetails)
+      ? hydrateSaleFromTyped(asRecord(contract.saleDetails), contract, notes)
+      : hydrateSale(terms, contract);
   } else if (type === "RENT") {
-    base.rent = hydrateRent(terms, contract);
+    base.rent = hasKeys(contract.rentDetails)
+      ? hydrateRentFromTyped(asRecord(contract.rentDetails), contract, notes)
+      : hydrateRent(terms, contract);
   } else if (type === "GOODWILL") {
-    base.goodwill = hydrateGoodwill(terms, contract);
+    base.goodwill = hasKeys(contract.goodwillDetails)
+      ? hydrateGoodwillFromTyped(
+          asRecord(contract.goodwillDetails),
+          contract,
+          notes,
+        )
+      : hydrateGoodwill(terms, contract);
   } else if (type === "PRE_SALE") {
-    base.presale = hydratePresale(terms, contract);
+    base.presale = hasKeys(contract.preSaleDetails)
+      ? hydratePresaleFromTyped(
+          asRecord(contract.preSaleDetails),
+          contract,
+          notes,
+        )
+      : hydratePresale(terms, contract);
   } else if (type === "MUTUAL_RESCISSION") {
-    base.rescission = hydrateRescission(terms, contract);
+    base.rescission = hasKeys(contract.rescissionDetails)
+      ? hydrateRescissionFromTyped(
+          asRecord(contract.rescissionDetails),
+          contract,
+          notes,
+        )
+      : hydrateRescission(terms, contract);
   } else if (type === "CONSTRUCTION_JOINT_VENTURE") {
-    base.cjv = hydrateCjv(terms, contract);
+    base.cjv = hasKeys(contract.cjvDetails)
+      ? hydrateCjvFromTyped(asRecord(contract.cjvDetails), contract, notes)
+      : hydrateCjv(terms, contract);
   } else {
     const financials = asRecord(terms.financials);
     const schedule = asRecord(terms.schedule);
@@ -463,7 +715,7 @@ export function contractToWizardState(contract: Contract): ContractWizardState {
       endDate: str(schedule.endDate),
       deliveryDueAt: str(schedule.deliveryDueAt),
       officialDeedDueAt: str(schedule.officialDeedDueAt),
-      notes: str(terms.notes),
+      notes,
     };
   }
 

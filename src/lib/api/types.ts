@@ -225,6 +225,194 @@ export interface ContractSignature {
   createdAt: string;
 }
 
+export type ContractLawyerSide = "FIRST_PARTY" | "SECOND_PARTY";
+
+export interface ContractLawyer {
+  id: string;
+  contractId: string;
+  side: ContractLawyerSide;
+  name: string | null;
+  fatherName: string | null;
+  identityNumber: string | null;
+  birthPlace: string | null;
+  birthDate: string | null;
+  identityExportPlace: string | null;
+  nationalCode: string | null;
+  address: string | null;
+  postalCode: string | null;
+  cause: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LawyerInput {
+  name?: string;
+  fatherName?: string;
+  identityNumber?: string;
+  birthPlace?: string;
+  birthDate?: string;
+  identityExportPlace?: string;
+  nationalCode?: string;
+  address?: string;
+  postalCode?: string;
+  cause?: string;
+}
+
+export interface ContractLawyersInput {
+  firstParty?: LawyerInput;
+  secondParty?: LawyerInput;
+}
+
+/** Nested party upsert: with `id` → patch then link; without → create. */
+export type ContractPartyNestedInput = Partial<CreatePartyInput> & {
+  id?: string;
+};
+
+/** Nested property upsert: with `id` → patch then link; without → create. */
+export type ContractPropertyNestedInput = Partial<CreatePropertyInput> & {
+  id?: string;
+};
+
+export type SaleDetailsInput = {
+  shareUnits?: number;
+  pricePerSqm?: number;
+  totalAmount?: number;
+  totalInWords?: string;
+  prePaymentAmount?: number;
+  prePaymentChequeNumber?: string;
+  prePaymentBankName?: string;
+  prePaymentBankBranch?: string;
+  remainderAmount?: number;
+  voucherRegistrationDate?: string;
+  voucherOrganizationNumber?: string;
+  deliveryDate?: string;
+  cancelationPenalty?: string;
+  breachPenalty?: string;
+  notaryFeePayer?: string;
+  delayPenaltyFirstPartyPerDay?: number;
+  delayPenaltySecondPartyPerDay?: number;
+};
+
+export type RentDetailsInput = {
+  shareUnits?: number;
+  durationMonths?: number;
+  fromDate?: string;
+  toDate?: string;
+  monthlyAmount?: number;
+  monthlyInWords?: string;
+  mortgageAmount?: number;
+  mortgageInWords?: string;
+  totalInWords?: string;
+  prePaymentAmount?: number;
+  prePaymentChequeNumber?: string;
+  prePaymentBankName?: string;
+  prePaymentBankBranch?: string;
+  remainderAmount?: number;
+  remainderDueDate?: string;
+  deliveryDate?: string;
+  cancelationPenalty?: string;
+  breachPenalty?: string;
+  notaryFeePayer?: string;
+  delayPenaltyFirstPartyPerDay?: number;
+  delayPenaltySecondPartyPerDay?: number;
+  propertyOwnerName?: string;
+};
+
+export type GoodwillDetailsInput = {
+  shareUnits?: number;
+  pricePerSqm?: number;
+  totalAmount?: number;
+  prePaymentAmount?: number;
+  prePaymentChequeNumber?: string;
+  prePaymentBankName?: string;
+  prePaymentBankBranch?: string;
+  remainderAmount?: number;
+  remainderDueDate?: string;
+  penaltyAmount?: string;
+  deliveryDate?: string;
+};
+
+export type PreSaleDetailsInput = {
+  renovationCode?: string;
+  technicalIdNumber?: string;
+  insuranceNumber?: string;
+  buildingPermitNumber?: string;
+  buildingPermitDate?: string;
+  equipped?: string;
+  totalFloors?: number;
+  totalUnits?: number;
+  areaSqm?: number;
+  storage?: string;
+  orientation?: string;
+  parkingNumberAndArea?: string;
+  flooringType?: string;
+  cabinetAndFaucetType?: string;
+  bathroomType?: string;
+  switchOutletType?: string;
+  entranceDoorType?: string;
+  interiorDoorType?: string;
+  ceilingPlasterType?: string;
+  emergencyWaterSourceType?: string;
+  heatingType?: string;
+  coolerType?: string;
+  intercomType?: string;
+  cctv?: string;
+  tilingType?: string;
+  windowType?: string;
+  facadeType?: string;
+  parkingFloorWallCover?: string;
+  lighting?: string;
+  balconyCorridorRailing?: string;
+  fireExtinguisher?: string;
+  elevator?: string;
+  waterMotor?: string;
+  utilitiesScore?: string;
+  loan?: string;
+  loanType?: string;
+  loanInstallmentAmount?: number;
+  totalAmount?: number;
+  totalInWords?: string;
+  deliveryDate?: string;
+  deedTransferDate?: string;
+  selfDeclareFormNumber?: string;
+  voucherOrganizationNumber?: string;
+};
+
+export type RescissionDetailsInput = {
+  originalContractNumber?: string;
+  originalContractDate?: string;
+  originalAgencyName?: string;
+  shareUnits?: number;
+  areaSqm?: number;
+  county?: string;
+  ownershipNumber?: string;
+  aggregationClause?: string;
+  deliveryClause?: string;
+  price?: number;
+  paymentType?: string;
+};
+
+export type CjvDetailsInput = {
+  propertyDescription?: string;
+  shareUnits?: number;
+  areaSqm?: number;
+  totalAmount?: number;
+  totalInWords?: string;
+  governmentalCosts?: number;
+  constructionCosts?: number;
+  facilityRightsCosts?: number;
+  destructionCost?: number;
+  firstPartyShare?: string;
+  secondPartyShare?: string;
+  startDateInWords?: string;
+  endDateInWords?: string;
+  costDetailsPrepareDate?: string;
+  voucherTransferDate?: string;
+  shareUnitsToTransfer?: string;
+  delayPenaltyFirstPartyPerDay?: number;
+  delayPenaltySecondPartyPerDay?: number;
+};
+
 export interface Contract {
   id: string;
   organizationId: string;
@@ -233,6 +421,8 @@ export interface Contract {
   contractType: ContractType;
   contractNumber: string;
   description: string | null;
+  contractDate: string | null;
+  contractTime: string | null;
   commissionPercentage: string | null;
   commissionAmount: string | null;
   taxPercentage: string | null;
@@ -241,6 +431,11 @@ export interface Contract {
   firstPartyCommissionAmount: string | null;
   secondPartyCommissionPercentage: string | null;
   secondPartyCommissionAmount: string | null;
+  commissionCityRules: string | null;
+  commissionFactorNumber: string | null;
+  firstPartyFactorNumber: string | null;
+  secondPartyFactorNumber: string | null;
+  notes: string | null;
   totalAmount: string | null;
   monthlyAmount: string | null;
   depositAmount: string | null;
@@ -248,6 +443,7 @@ export interface Contract {
   endDate: string | null;
   deliveryDate: string | null;
   officialDeedDate: string | null;
+  /** @deprecated Prefer typed *Details */
   termsAndConditions: JsonObject | null;
   signedAt: string | null;
   deletedAt: string | null;
@@ -256,6 +452,13 @@ export interface Contract {
   property?: Property;
   parties?: ContractParty[];
   signatures?: ContractSignature[];
+  lawyers?: ContractLawyer[];
+  saleDetails?: SaleDetailsInput | JsonObject | null;
+  rentDetails?: RentDetailsInput | JsonObject | null;
+  goodwillDetails?: GoodwillDetailsInput | JsonObject | null;
+  preSaleDetails?: PreSaleDetailsInput | JsonObject | null;
+  rescissionDetails?: RescissionDetailsInput | JsonObject | null;
+  cjvDetails?: CjvDetailsInput | JsonObject | null;
 }
 
 export interface LoginInput {
@@ -366,8 +569,17 @@ export interface CreateContractInput {
   organizationId?: string;
   contractType: ContractType;
   contractNumber: string;
-  propertyId: string;
+  /** Link existing property. Prefer nested `property` when patching. */
+  propertyId?: string;
+  property?: ContractPropertyNestedInput;
   description?: string;
+  contractDate?: string;
+  contractTime?: string;
+  commissionCityRules?: string;
+  commissionFactorNumber?: string;
+  firstPartyFactorNumber?: string;
+  secondPartyFactorNumber?: string;
+  notes?: string;
   commissionPercentage?: number;
   commissionAmount?: number;
   taxPercentage?: number;
@@ -383,11 +595,26 @@ export interface CreateContractInput {
   endDate?: string;
   deliveryDate?: string;
   officialDeedDate?: string;
+  /** @deprecated Prefer typed *Details */
   termsAndConditions?: JsonObject;
-  firstPartyId: string;
-  secondPartyId: string;
+  firstPartyId?: string;
+  secondPartyId?: string;
   witnessIds?: string[];
+  firstParty?: ContractPartyNestedInput;
+  secondParty?: ContractPartyNestedInput;
+  witnesses?: ContractPartyNestedInput[];
+  lawyers?: ContractLawyersInput;
+  saleDetails?: SaleDetailsInput;
+  rentDetails?: RentDetailsInput;
+  goodwillDetails?: GoodwillDetailsInput;
+  preSaleDetails?: PreSaleDetailsInput;
+  rescissionDetails?: RescissionDetailsInput;
+  cjvDetails?: CjvDetailsInput;
 }
+
+export type UpdateContractInput = Partial<CreateContractInput> & {
+  signedAt?: string;
+};
 
 export interface CreateSignatureInput {
   partyId: string;

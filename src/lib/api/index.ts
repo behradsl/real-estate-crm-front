@@ -6,6 +6,7 @@ import type {
   CreateContractInput,
   CreateOrganizationInput,
   CreatePartyInput,
+  UpdateContractInput,
   CreatePropertyInput,
   CreateSignatureInput,
   CreateUserInput,
@@ -139,7 +140,7 @@ export const contractsApi = {
       method: "POST",
       body: JSON.stringify(input),
     }),
-  update: (id: string, input: Partial<CreateContractInput> & { signedAt?: string }) =>
+  update: (id: string, input: UpdateContractInput) =>
     apiFetch<Contract>(`/contracts/${id}`, {
       method: "PATCH",
       body: JSON.stringify(input),

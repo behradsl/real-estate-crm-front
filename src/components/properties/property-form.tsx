@@ -7,6 +7,11 @@ import type {
   Property,
   PropertyType,
 } from "@/lib/api/types";
+import {
+  ALL_PROPERTY_FORM_FIELDS,
+  showPropertyField,
+  type PropertyFormField,
+} from "@/lib/contracts/contract-entity-fields";
 import { deedInfoDefaults, otherFacilitiesExample, PROPERTY_TYPES } from "@/lib/examples";
 import { messages, propertyTypeLabels } from "@/lib/labels";
 import { Button } from "@/components/ui/button";
@@ -58,6 +63,7 @@ export function PropertyForm({
   submitLabel,
   submittingLabel,
   seedExamples = true,
+  fields,
   onSubmit,
 }: {
   initial?: Property | null;
@@ -65,8 +71,15 @@ export function PropertyForm({
   submittingLabel?: string;
   /** Prefill demo values on create (disable in pickers). */
   seedExamples?: boolean;
+  /** When omitted, show the full CRM union of fields. */
+  fields?: readonly PropertyFormField[];
   onSubmit: (payload: CreatePropertyInput) => Promise<void>;
 }) {
+  const visible = fields ?? ALL_PROPERTY_FORM_FIELDS;
+  const show = (key: PropertyFormField) => showPropertyField(visible, key);
+  /** Other facilities are CRM-only; hide when contract-type field filter is set. */
+  const showOtherFacilities = fields == null;
+
   const isEdit = Boolean(initial);
   const useSeed = !isEdit && seedExamples;
   const [submitting, setSubmitting] = useState(false);
@@ -152,51 +165,132 @@ export function PropertyForm({
       (useSeed ? deedInfoDefaults.deedSerialNumber : ""),
   });
 
+  const addressVisible =
+    show("addressCity") ||
+    show("addressProvince") ||
+    show("addressDetails") ||
+    show("addressPlaque") ||
+    show("addressPostalCode");
+
+  const facilitiesVisible =
+    show("water") ||
+    show("electricity") ||
+    show("gas") ||
+    show("telephone") ||
+    show("parking") ||
+    show("parkingCount") ||
+    show("storage") ||
+    show("storageCount") ||
+    show("storageArea") ||
+    show("elevator");
+
+  const deedVisible =
+    show("deedCadastralNumber") ||
+    show("deedSubParcelNumber") ||
+    show("deedMainParcelNumber") ||
+    show("deedPlotNumber") ||
+    show("deedCadastralDistrict") ||
+    show("deedRegistrationArea") ||
+    show("deedAreaSqm") ||
+    show("deedPostalCode") ||
+    show("deedSerialNumber");
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSubmitting(true);
     try {
       await onSubmit({
-        title,
-        description: emptyToUndefined(description),
-        propertyType,
-        referenceCode: emptyToUndefined(referenceCode),
-        areaSqm: areaSqm ? Number(areaSqm) : undefined,
-        floor: floor ? Number(floor) : undefined,
-        totalFloors: totalFloors ? Number(totalFloors) : undefined,
-        yearBuilt: yearBuilt ? Number(yearBuilt) : undefined,
-        bedrooms: bedrooms ? Number(bedrooms) : undefined,
-        bathrooms: bathrooms ? Number(bathrooms) : undefined,
-        parkingSpots: parkingCount ? Number(parkingCount) : undefined,
-        address: {
-          city,
-          province,
-          details: emptyToUndefined(details),
-          plaque: emptyToUndefined(plaque),
-          postalCode: emptyToUndefined(postalCode),
-        },
-        water,
-        electricity,
-        gas,
-        telephone,
-        parking,
-        parkingCount: parkingCount ? Number(parkingCount) : undefined,
-        storage,
-        storageCount: storageCount ? Number(storageCount) : undefined,
-        storageArea: storageArea ? Number(storageArea) : undefined,
-        elevator,
-        otherFacilities: otherFacilities.filter((f) => f.name.trim()),
-        deedInfo: {
-          cadastralNumber: emptyToUndefined(deed.cadastralNumber),
-          subParcelNumber: emptyToUndefined(deed.subParcelNumber),
-          mainParcelNumber: emptyToUndefined(deed.mainParcelNumber),
-          plotNumber: emptyToUndefined(deed.plotNumber),
-          cadastralDistrict: emptyToUndefined(deed.cadastralDistrict),
-          registrationArea: emptyToUndefined(deed.registrationArea),
-          areaSqm: deed.areaSqm ? Number(deed.areaSqm) : undefined,
-          postalCode: emptyToUndefined(deed.postalCode),
-          deedSerialNumber: emptyToUndefined(deed.deedSerialNumber),
-        },
+        title: show("title") ? title : (initial?.title ?? title),
+        description: show("description")
+          ? emptyToUndefined(description)
+          : undefined,
+        propertyType: show("propertyType")
+          ? propertyType
+          : (initial?.propertyType ?? propertyType),
+        referenceCode: show("referenceCode")
+          ? emptyToUndefined(referenceCode)
+          : undefined,
+        areaSqm: show("areaSqm") && areaSqm ? Number(areaSqm) : undefined,
+        floor: show("floor") && floor ? Number(floor) : undefined,
+        totalFloors:
+          show("totalFloors") && totalFloors ? Number(totalFloors) : undefined,
+        yearBuilt: show("yearBuilt") && yearBuilt ? Number(yearBuilt) : undefined,
+        bedrooms: show("bedrooms") && bedrooms ? Number(bedrooms) : undefined,
+        bathrooms:
+          show("bathrooms") && bathrooms ? Number(bathrooms) : undefined,
+        parkingSpots:
+          show("parkingCount") && parkingCount
+            ? Number(parkingCount)
+            : undefined,
+        address: addressVisible
+          ? {
+              city: show("addressCity") ? city : (initial?.address?.city ?? city),
+              province: show("addressProvince")
+                ? province
+                : (initial?.address?.province ?? province),
+              details: show("addressDetails")
+                ? emptyToUndefined(details)
+                : undefined,
+              plaque: show("addressPlaque")
+                ? emptyToUndefined(plaque)
+                : undefined,
+              postalCode: show("addressPostalCode")
+                ? emptyToUndefined(postalCode)
+                : undefined,
+            }
+          : undefined,
+        water: show("water") ? water : undefined,
+        electricity: show("electricity") ? electricity : undefined,
+        gas: show("gas") ? gas : undefined,
+        telephone: show("telephone") ? telephone : undefined,
+        parking: show("parking") ? parking : undefined,
+        parkingCount:
+          show("parkingCount") && parkingCount
+            ? Number(parkingCount)
+            : undefined,
+        storage: show("storage") ? storage : undefined,
+        storageCount:
+          show("storageCount") && storageCount
+            ? Number(storageCount)
+            : undefined,
+        storageArea:
+          show("storageArea") && storageArea ? Number(storageArea) : undefined,
+        elevator: show("elevator") ? elevator : undefined,
+        otherFacilities: showOtherFacilities
+          ? otherFacilities.filter((f) => f.name.trim())
+          : undefined,
+        deedInfo: deedVisible
+          ? {
+              cadastralNumber: show("deedCadastralNumber")
+                ? emptyToUndefined(deed.cadastralNumber)
+                : undefined,
+              subParcelNumber: show("deedSubParcelNumber")
+                ? emptyToUndefined(deed.subParcelNumber)
+                : undefined,
+              mainParcelNumber: show("deedMainParcelNumber")
+                ? emptyToUndefined(deed.mainParcelNumber)
+                : undefined,
+              plotNumber: show("deedPlotNumber")
+                ? emptyToUndefined(deed.plotNumber)
+                : undefined,
+              cadastralDistrict: show("deedCadastralDistrict")
+                ? emptyToUndefined(deed.cadastralDistrict)
+                : undefined,
+              registrationArea: show("deedRegistrationArea")
+                ? emptyToUndefined(deed.registrationArea)
+                : undefined,
+              areaSqm:
+                show("deedAreaSqm") && deed.areaSqm
+                  ? Number(deed.areaSqm)
+                  : undefined,
+              postalCode: show("deedPostalCode")
+                ? emptyToUndefined(deed.postalCode)
+                : undefined,
+              deedSerialNumber: show("deedSerialNumber")
+                ? emptyToUndefined(deed.deedSerialNumber)
+                : undefined,
+            }
+          : undefined,
       });
     } finally {
       setSubmitting(false);
@@ -209,25 +303,68 @@ export function PropertyForm({
     );
   }
 
-  const specFields = [
-    ["متراژ (متر مربع)", areaSqm, setAreaSqm],
-    ["طبقه", floor, setFloor],
-    ["تعداد طبقات", totalFloors, setTotalFloors],
-    ["سال ساخت", yearBuilt, setYearBuilt],
-    ["تعداد خواب", bedrooms, setBedrooms],
-    ["تعداد سرویس", bathrooms, setBathrooms],
-  ] as const;
+  const specFields: Array<{
+    key: PropertyFormField;
+    label: string;
+    value: string;
+    setter: (v: string) => void;
+  }> = [
+    { key: "areaSqm", label: "متراژ (متر مربع)", value: areaSqm, setter: setAreaSqm },
+    { key: "floor", label: "طبقه", value: floor, setter: setFloor },
+    {
+      key: "totalFloors",
+      label: "تعداد طبقات",
+      value: totalFloors,
+      setter: setTotalFloors,
+    },
+    { key: "yearBuilt", label: "سال ساخت", value: yearBuilt, setter: setYearBuilt },
+    { key: "bedrooms", label: "تعداد خواب", value: bedrooms, setter: setBedrooms },
+    {
+      key: "bathrooms",
+      label: "تعداد سرویس",
+      value: bathrooms,
+      setter: setBathrooms,
+    },
+  ];
 
-  const deedFields = [
-    ["شماره پلاک ثبتی", "cadastralNumber"],
-    ["قطعه فرعی", "subParcelNumber"],
-    ["قطعه اصلی", "mainParcelNumber"],
-    ["شماره قطعه", "plotNumber"],
-    ["بخش ثبتی", "cadastralDistrict"],
-    ["حوزه ثبتی", "registrationArea"],
-    ["سریال سند", "deedSerialNumber"],
-    ["کد پستی سند", "postalCode"],
-  ] as const;
+  const deedFields: Array<{
+    key: PropertyFormField;
+    label: string;
+    deedKey: keyof typeof deed;
+  }> = [
+    {
+      key: "deedCadastralNumber",
+      label: "شماره پلاک ثبتی",
+      deedKey: "cadastralNumber",
+    },
+    {
+      key: "deedSubParcelNumber",
+      label: "قطعه فرعی",
+      deedKey: "subParcelNumber",
+    },
+    {
+      key: "deedMainParcelNumber",
+      label: "قطعه اصلی",
+      deedKey: "mainParcelNumber",
+    },
+    { key: "deedPlotNumber", label: "شماره قطعه", deedKey: "plotNumber" },
+    {
+      key: "deedCadastralDistrict",
+      label: "بخش ثبتی",
+      deedKey: "cadastralDistrict",
+    },
+    {
+      key: "deedRegistrationArea",
+      label: "حوزه ثبتی",
+      deedKey: "registrationArea",
+    },
+    {
+      key: "deedSerialNumber",
+      label: "سریال سند",
+      deedKey: "deedSerialNumber",
+    },
+    { key: "deedPostalCode", label: "کد پستی سند", deedKey: "postalCode" },
+  ];
 
   return (
     <form className="space-y-5" onSubmit={(e) => void handleSubmit(e)}>
@@ -236,227 +373,309 @@ export function PropertyForm({
           <CardTitle>اطلاعات پایه</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-5 md:grid-cols-2">
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="title">عنوان ملک</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثلاً آپارتمان ۱۳۰ متری ونک"
-              required
-            />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="description">توضیحات</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="موقعیت، نورگیری، بازسازی و نکات مهم فایل"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>نوع ملک</Label>
-            <Select
-              value={propertyType}
-              onValueChange={(v) => setPropertyType(v as PropertyType)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PROPERTY_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {propertyTypeLabels[type]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="ref">کد ارجاع</Label>
-            <Input
-              id="ref"
-              value={referenceCode}
-              onChange={(e) => setReferenceCode(e.target.value)}
-              dir="ltr"
-            />
-          </div>
-          {specFields.map(([label, value, setter]) => (
-            <div className="space-y-2" key={label}>
-              <Label>{label}</Label>
+          {show("title") ? (
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="title">عنوان ملک</Label>
               <Input
-                type="number"
-                value={value}
-                onChange={(e) => setter(e.target.value)}
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="مثلاً آپارتمان ۱۳۰ متری ونک"
+                required
               />
             </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>نشانی</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-5 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>شهر</Label>
-            <Input value={city} onChange={(e) => setCity(e.target.value)} required />
-          </div>
-          <div className="space-y-2">
-            <Label>استان</Label>
-            <Input
-              value={province}
-              onChange={(e) => setProvince(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>جزئیات نشانی</Label>
-            <Input
-              value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              placeholder="محله، خیابان، کوچه"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>پلاک</Label>
-            <Input value={plaque} onChange={(e) => setPlaque(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>کد پستی</Label>
-            <Input
-              value={postalCode}
-              onChange={(e) => setPostalCode(e.target.value)}
-              dir="ltr"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>امکانات</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-            <BoolField label="آب" checked={water} onChange={setWater} />
-            <BoolField label="برق" checked={electricity} onChange={setElectricity} />
-            <BoolField label="گاز" checked={gas} onChange={setGas} />
-            <BoolField label="تلفن" checked={telephone} onChange={setTelephone} />
-            <BoolField label="پارکینگ" checked={parking} onChange={setParking} />
-            <BoolField label="انباری" checked={storage} onChange={setStorage} />
-            <BoolField label="آسانسور" checked={elevator} onChange={setElevator} />
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
+          ) : null}
+          {show("description") ? (
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="description">توضیحات</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="موقعیت، نورگیری، بازسازی و نکات مهم فایل"
+              />
+            </div>
+          ) : null}
+          {show("propertyType") ? (
             <div className="space-y-2">
-              <Label>تعداد پارکینگ</Label>
-              <Input
-                type="number"
-                value={parkingCount}
-                onChange={(e) => setParkingCount(e.target.value)}
-              />
+              <Label>نوع ملک</Label>
+              <Select
+                value={propertyType}
+                onValueChange={(v) => setPropertyType(v as PropertyType)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROPERTY_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {propertyTypeLabels[type]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          ) : null}
+          {show("referenceCode") ? (
             <div className="space-y-2">
-              <Label>تعداد انباری</Label>
+              <Label htmlFor="ref">کد ارجاع</Label>
               <Input
-                type="number"
-                value={storageCount}
-                onChange={(e) => setStorageCount(e.target.value)}
+                id="ref"
+                value={referenceCode}
+                onChange={(e) => setReferenceCode(e.target.value)}
+                dir="ltr"
               />
             </div>
-            <div className="space-y-2">
-              <Label>متراژ انباری (متر مربع)</Label>
-              <Input
-                type="number"
-                value={storageArea}
-                onChange={(e) => setStorageArea(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>امکانات تکمیلی</CardTitle>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              setOtherFacilities((prev) => [...prev, { name: "", kind: "" }])
-            }
-          >
-            {messages.add}
-          </Button>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {otherFacilities.map((item, index) => (
-            <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]" key={index}>
-              <div className="space-y-2">
-                <Label>عنوان</Label>
+          ) : null}
+          {specFields
+            .filter((f) => show(f.key))
+            .map((f) => (
+              <div className="space-y-2" key={f.key}>
+                <Label>{f.label}</Label>
                 <Input
-                  value={item.name}
-                  onChange={(e) => updateOther(index, { name: e.target.value })}
-                  placeholder="گرمایش"
+                  type="number"
+                  value={f.value}
+                  onChange={(e) => f.setter(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>نوع / مدل</Label>
-                <Input
-                  value={item.kind}
-                  onChange={(e) => updateOther(index, { kind: e.target.value })}
-                  placeholder="گرمایش از کف"
-                />
-              </div>
-              <div className="flex items-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() =>
-                    setOtherFacilities((prev) =>
-                      prev.filter((_, i) => i !== index),
-                    )
-                  }
-                >
-                  {messages.remove}
-                </Button>
-              </div>
-            </div>
-          ))}
+            ))}
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>مشخصات سند</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-5 md:grid-cols-2">
-          {deedFields.map(([label, key]) => (
-            <div className="space-y-2" key={key}>
-              <Label>{label}</Label>
-              <Input
-                value={deed[key]}
-                onChange={(e) =>
-                  setDeed((prev) => ({ ...prev, [key]: e.target.value }))
-                }
-              />
+      {addressVisible ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>نشانی</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 md:grid-cols-2">
+            {show("addressCity") ? (
+              <div className="space-y-2">
+                <Label>شهر</Label>
+                <Input
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required
+                />
+              </div>
+            ) : null}
+            {show("addressProvince") ? (
+              <div className="space-y-2">
+                <Label>استان</Label>
+                <Input
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  required
+                />
+              </div>
+            ) : null}
+            {show("addressDetails") ? (
+              <div className="space-y-2">
+                <Label>جزئیات نشانی</Label>
+                <Input
+                  value={details}
+                  onChange={(e) => setDetails(e.target.value)}
+                  placeholder="محله، خیابان، کوچه"
+                />
+              </div>
+            ) : null}
+            {show("addressPlaque") ? (
+              <div className="space-y-2">
+                <Label>پلاک</Label>
+                <Input
+                  value={plaque}
+                  onChange={(e) => setPlaque(e.target.value)}
+                />
+              </div>
+            ) : null}
+            {show("addressPostalCode") ? (
+              <div className="space-y-2">
+                <Label>کد پستی</Label>
+                <Input
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  dir="ltr"
+                />
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {facilitiesVisible ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>امکانات</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              {show("water") ? (
+                <BoolField label="آب" checked={water} onChange={setWater} />
+              ) : null}
+              {show("electricity") ? (
+                <BoolField
+                  label="برق"
+                  checked={electricity}
+                  onChange={setElectricity}
+                />
+              ) : null}
+              {show("gas") ? (
+                <BoolField label="گاز" checked={gas} onChange={setGas} />
+              ) : null}
+              {show("telephone") ? (
+                <BoolField
+                  label="تلفن"
+                  checked={telephone}
+                  onChange={setTelephone}
+                />
+              ) : null}
+              {show("parking") ? (
+                <BoolField
+                  label="پارکینگ"
+                  checked={parking}
+                  onChange={setParking}
+                />
+              ) : null}
+              {show("storage") ? (
+                <BoolField
+                  label="انباری"
+                  checked={storage}
+                  onChange={setStorage}
+                />
+              ) : null}
+              {show("elevator") ? (
+                <BoolField
+                  label="آسانسور"
+                  checked={elevator}
+                  onChange={setElevator}
+                />
+              ) : null}
             </div>
-          ))}
-          <div className="space-y-2">
-            <Label>متراژ سند (متر مربع)</Label>
-            <Input
-              type="number"
-              value={deed.areaSqm}
-              onChange={(e) =>
-                setDeed((prev) => ({ ...prev, areaSqm: e.target.value }))
+            <div className="grid gap-5 md:grid-cols-3">
+              {show("parkingCount") ? (
+                <div className="space-y-2">
+                  <Label>تعداد پارکینگ</Label>
+                  <Input
+                    type="number"
+                    value={parkingCount}
+                    onChange={(e) => setParkingCount(e.target.value)}
+                  />
+                </div>
+              ) : null}
+              {show("storageCount") ? (
+                <div className="space-y-2">
+                  <Label>تعداد انباری</Label>
+                  <Input
+                    type="number"
+                    value={storageCount}
+                    onChange={(e) => setStorageCount(e.target.value)}
+                  />
+                </div>
+              ) : null}
+              {show("storageArea") ? (
+                <div className="space-y-2">
+                  <Label>متراژ انباری (متر مربع)</Label>
+                  <Input
+                    type="number"
+                    value={storageArea}
+                    onChange={(e) => setStorageArea(e.target.value)}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {showOtherFacilities ? (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>امکانات تکمیلی</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setOtherFacilities((prev) => [...prev, { name: "", kind: "" }])
               }
-            />
-          </div>
-        </CardContent>
-      </Card>
+            >
+              {messages.add}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {otherFacilities.map((item, index) => (
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]" key={index}>
+                <div className="space-y-2">
+                  <Label>عنوان</Label>
+                  <Input
+                    value={item.name}
+                    onChange={(e) => updateOther(index, { name: e.target.value })}
+                    placeholder="گرمایش"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>نوع / مدل</Label>
+                  <Input
+                    value={item.kind}
+                    onChange={(e) => updateOther(index, { kind: e.target.value })}
+                    placeholder="گرمایش از کف"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() =>
+                      setOtherFacilities((prev) =>
+                        prev.filter((_, i) => i !== index),
+                      )
+                    }
+                  >
+                    {messages.remove}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {deedVisible ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>مشخصات سند</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 md:grid-cols-2">
+            {deedFields
+              .filter((f) => show(f.key))
+              .map((f) => (
+                <div className="space-y-2" key={f.key}>
+                  <Label>{f.label}</Label>
+                  <Input
+                    value={deed[f.deedKey]}
+                    onChange={(e) =>
+                      setDeed((prev) => ({
+                        ...prev,
+                        [f.deedKey]: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              ))}
+            {show("deedAreaSqm") ? (
+              <div className="space-y-2">
+                <Label>متراژ سند (متر مربع)</Label>
+                <Input
+                  type="number"
+                  value={deed.areaSqm}
+                  onChange={(e) =>
+                    setDeed((prev) => ({ ...prev, areaSqm: e.target.value }))
+                  }
+                />
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Button disabled={submitting} type="submit">
         {submitting ? (submittingLabel ?? messages.saving) : submitLabel}

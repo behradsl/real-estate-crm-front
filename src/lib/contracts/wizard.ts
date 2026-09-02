@@ -768,74 +768,248 @@ export function buildTermsAndConditions(state: ContractWizardState): JsonObject 
   };
 }
 
+function termsNotes(state: ContractWizardState): string | undefined {
+  if (state.contractType === "SALE") return strOrUndef(state.sale.notes);
+  if (state.contractType === "RENT") return strOrUndef(state.rent.notes);
+  if (state.contractType === "GOODWILL") return strOrUndef(state.goodwill.notes);
+  if (state.contractType === "PRE_SALE") return strOrUndef(state.presale.notes);
+  if (state.contractType === "MUTUAL_RESCISSION") {
+    return strOrUndef(state.rescission.notes);
+  }
+  if (state.contractType === "CONSTRUCTION_JOINT_VENTURE") {
+    return strOrUndef(state.cjv.notes);
+  }
+  return strOrUndef(state.generic.notes);
+}
+
+function lawyersPayload(
+  state: ContractWizardState,
+): CreateContractInput["lawyers"] {
+  const firstParty = lawyerToJson(state.lawyers.firstPartyLawyer);
+  const secondParty = lawyerToJson(state.lawyers.secondPartyLawyer);
+  if (!firstParty && !secondParty) return undefined;
+  return {
+    ...(firstParty ? { firstParty } : {}),
+    ...(secondParty ? { secondParty } : {}),
+  };
+}
+
 export function buildCreateContractPayload(
   state: ContractWizardState,
 ): CreateContractInput {
-  const termsAndConditions = buildTermsAndConditions(state);
+  const lawyers = lawyersPayload(state);
+  const notes = termsNotes(state);
+
   const base: CreateContractInput = {
     contractType: state.contractType,
     contractNumber: state.contractNumber.trim(),
-    propertyId: state.propertyId,
-    firstPartyId: state.firstPartyId,
-    secondPartyId: state.secondPartyId,
+    propertyId: state.propertyId || undefined,
+    firstPartyId: state.firstPartyId || undefined,
+    secondPartyId: state.secondPartyId || undefined,
     witnessIds: state.witnessIds.length ? state.witnessIds : undefined,
     description: state.description.trim() || undefined,
+    contractDate: state.contractDate.trim() || undefined,
+    contractTime: state.contractTime.trim() || undefined,
+    commissionCityRules: state.commissionCityRules.trim() || undefined,
+    commissionFactorNumber: state.commissionFactorNumber.trim() || undefined,
+    firstPartyFactorNumber: state.firstPartyFactorNumber.trim() || undefined,
+    secondPartyFactorNumber: state.secondPartyFactorNumber.trim() || undefined,
+    notes,
     commissionPercentage: num(state.commissionPercentage),
     commissionAmount: num(state.commissionAmount),
     taxPercentage: num(state.taxPercentage),
     taxAmount: num(state.taxAmount),
     firstPartyCommissionAmount: num(state.firstPartyCommissionAmount),
     secondPartyCommissionAmount: num(state.secondPartyCommissionAmount),
-    termsAndConditions,
+    ...(lawyers ? { lawyers } : {}),
   };
 
   if (state.contractType === "SALE") {
+    const s = state.sale;
     return {
       ...base,
-      totalAmount: num(state.sale.totalAmount),
-      deliveryDate: jalaliOrIsoToIso(state.sale.deliveryDate),
+      totalAmount: num(s.totalAmount),
+      deliveryDate: jalaliOrIsoToIso(s.deliveryDate),
+      saleDetails: pickFilled({
+        shareUnits: num(s.shareUnits),
+        pricePerSqm: num(s.pricePerSqm),
+        totalAmount: num(s.totalAmount),
+        totalInWords: strOrUndef(s.totalInWords),
+        prePaymentAmount: num(s.prePaymentAmount),
+        prePaymentChequeNumber: strOrUndef(s.prePaymentChequeNumber),
+        prePaymentBankName: strOrUndef(s.prePaymentBankName),
+        prePaymentBankBranch: strOrUndef(s.prePaymentBankBranch),
+        remainderAmount: num(s.remainderAmount),
+        voucherRegistrationDate: strOrUndef(s.voucherRegistrationDate),
+        voucherOrganizationNumber: strOrUndef(s.voucherOrganizationNumber),
+        deliveryDate: strOrUndef(s.deliveryDate),
+        cancelationPenalty: strOrUndef(s.cancelationPenalty),
+        breachPenalty: strOrUndef(s.breachPenalty),
+        notaryFeePayer: strOrUndef(s.notaryFeePayer),
+        delayPenaltyFirstPartyPerDay: num(s.delayPenaltyFirstPartyPerDay),
+        delayPenaltySecondPartyPerDay: num(s.delayPenaltySecondPartyPerDay),
+      }),
     };
   }
 
   if (state.contractType === "RENT") {
+    const r = state.rent;
     return {
       ...base,
-      monthlyAmount: num(state.rent.monthlyAmount),
-      depositAmount: num(state.rent.mortgageAmount),
-      startDate: jalaliOrIsoToIso(state.rent.fromDate),
-      endDate: jalaliOrIsoToIso(state.rent.toDate),
-      deliveryDate: jalaliOrIsoToIso(state.rent.deliveryDate),
+      monthlyAmount: num(r.monthlyAmount),
+      depositAmount: num(r.mortgageAmount),
+      startDate: jalaliOrIsoToIso(r.fromDate),
+      endDate: jalaliOrIsoToIso(r.toDate),
+      deliveryDate: jalaliOrIsoToIso(r.deliveryDate),
+      rentDetails: pickFilled({
+        shareUnits: num(r.shareUnits),
+        durationMonths: num(r.durationMonths),
+        fromDate: strOrUndef(r.fromDate),
+        toDate: strOrUndef(r.toDate),
+        monthlyAmount: num(r.monthlyAmount),
+        monthlyInWords: strOrUndef(r.monthlyInWords),
+        mortgageAmount: num(r.mortgageAmount),
+        mortgageInWords: strOrUndef(r.mortgageInWords),
+        totalInWords: strOrUndef(r.totalInWords),
+        prePaymentAmount: num(r.prePaymentAmount),
+        prePaymentChequeNumber: strOrUndef(r.prePaymentChequeNumber),
+        prePaymentBankName: strOrUndef(r.prePaymentBankName),
+        prePaymentBankBranch: strOrUndef(r.prePaymentBankBranch),
+        remainderAmount: num(r.remainderAmount),
+        remainderDueDate: strOrUndef(r.remainderDueDate),
+        deliveryDate: strOrUndef(r.deliveryDate),
+        cancelationPenalty: strOrUndef(r.cancelationPenalty),
+        breachPenalty: strOrUndef(r.breachPenalty),
+        notaryFeePayer: strOrUndef(r.notaryFeePayer),
+        delayPenaltyFirstPartyPerDay: num(r.delayPenaltyFirstPartyPerDay),
+        delayPenaltySecondPartyPerDay: num(r.delayPenaltySecondPartyPerDay),
+      }),
     };
   }
 
   if (state.contractType === "GOODWILL") {
+    const g = state.goodwill;
     return {
       ...base,
-      totalAmount: num(state.goodwill.totalAmount),
-      deliveryDate: jalaliOrIsoToIso(state.goodwill.deliveryDate),
+      totalAmount: num(g.totalAmount),
+      deliveryDate: jalaliOrIsoToIso(g.deliveryDate),
+      goodwillDetails: pickFilled({
+        shareUnits: num(g.shareUnits),
+        pricePerSqm: num(g.pricePerSqm),
+        totalAmount: num(g.totalAmount),
+        prePaymentAmount: num(g.prePaymentAmount),
+        prePaymentChequeNumber: strOrUndef(g.prePaymentChequeNumber),
+        prePaymentBankName: strOrUndef(g.prePaymentBankName),
+        prePaymentBankBranch: strOrUndef(g.prePaymentBankBranch),
+        remainderAmount: num(g.remainderAmount),
+        remainderDueDate: strOrUndef(g.remainderDueDate),
+        penaltyAmount: strOrUndef(g.penaltyAmount),
+        deliveryDate: strOrUndef(g.deliveryDate),
+      }),
     };
   }
 
   if (state.contractType === "PRE_SALE") {
+    const p = state.presale;
     return {
       ...base,
-      totalAmount: num(state.presale.totalAmount),
-      deliveryDate: jalaliOrIsoToIso(state.presale.deliveryDate),
-      officialDeedDate: jalaliOrIsoToIso(state.presale.deedTransferDate),
+      totalAmount: num(p.totalAmount),
+      deliveryDate: jalaliOrIsoToIso(p.deliveryDate),
+      officialDeedDate: jalaliOrIsoToIso(p.deedTransferDate),
+      preSaleDetails: pickFilled({
+        renovationCode: strOrUndef(p.renovationCode),
+        technicalIdNumber: strOrUndef(p.technicalIdNumber),
+        insuranceNumber: strOrUndef(p.insuranceNumber),
+        buildingPermitNumber: strOrUndef(p.buildingPermitNumber),
+        buildingPermitDate: strOrUndef(p.buildingPermitDate),
+        equipped: strOrUndef(p.equipped),
+        totalFloors: num(p.totalFloors),
+        totalUnits: num(p.totalUnits),
+        areaSqm: num(p.areaSqm),
+        storage: strOrUndef(p.storage),
+        orientation: strOrUndef(p.orientation),
+        parkingNumberAndArea: strOrUndef(p.parkingNumberAndArea),
+        flooringType: strOrUndef(p.flooringType),
+        cabinetAndFaucetType: strOrUndef(p.cabinetAndFaucetType),
+        bathroomType: strOrUndef(p.bathroomType),
+        switchOutletType: strOrUndef(p.switchOutletType),
+        entranceDoorType: strOrUndef(p.entranceDoorType),
+        interiorDoorType: strOrUndef(p.interiorDoorType),
+        ceilingPlasterType: strOrUndef(p.ceilingPlasterType),
+        emergencyWaterSourceType: strOrUndef(p.emergencyWaterSourceType),
+        heatingType: strOrUndef(p.heatingType),
+        coolerType: strOrUndef(p.coolerType),
+        intercomType: strOrUndef(p.intercomType),
+        cctv: strOrUndef(p.cctv),
+        tilingType: strOrUndef(p.tilingType),
+        windowType: strOrUndef(p.windowType),
+        facadeType: strOrUndef(p.facadeType),
+        parkingFloorWallCover: strOrUndef(p.parkingFloorWallCover),
+        lighting: strOrUndef(p.lighting),
+        balconyCorridorRailing: strOrUndef(p.balconyCorridorRailing),
+        fireExtinguisher: strOrUndef(p.fireExtinguisher),
+        elevator: strOrUndef(p.elevator),
+        waterMotor: strOrUndef(p.waterMotor),
+        utilitiesScore: strOrUndef(p.utilitiesScore),
+        loan: strOrUndef(p.loan),
+        loanType: strOrUndef(p.loanType),
+        loanInstallmentAmount: num(p.loanInstallmentAmount),
+        totalAmount: num(p.totalAmount),
+        totalInWords: strOrUndef(p.totalInWords),
+        deliveryDate: strOrUndef(p.deliveryDate),
+        deedTransferDate: strOrUndef(p.deedTransferDate),
+        selfDeclareFormNumber: strOrUndef(p.selfDeclareFormNumber),
+        voucherOrganizationNumber: strOrUndef(p.voucherOrganizationNumber),
+      }),
     };
   }
 
   if (state.contractType === "MUTUAL_RESCISSION") {
+    const r = state.rescission;
     return {
       ...base,
-      totalAmount: num(state.rescission.price),
+      totalAmount: num(r.price),
+      rescissionDetails: pickFilled({
+        originalContractNumber: strOrUndef(r.originalContractNumber),
+        originalContractDate: strOrUndef(r.originalContractDate),
+        originalAgencyName: strOrUndef(r.originalAgencyName),
+        shareUnits: num(r.shareUnits),
+        areaSqm: num(r.areaSqm),
+        county: strOrUndef(r.county),
+        ownershipNumber: strOrUndef(r.ownershipNumber),
+        aggregationClause: strOrUndef(r.aggregationClause),
+        deliveryClause: strOrUndef(r.deliveryClause),
+        price: num(r.price),
+        paymentType: strOrUndef(r.paymentType),
+      }),
     };
   }
 
   if (state.contractType === "CONSTRUCTION_JOINT_VENTURE") {
+    const c = state.cjv;
     return {
       ...base,
-      totalAmount: num(state.cjv.totalAmount),
+      totalAmount: num(c.totalAmount),
+      cjvDetails: pickFilled({
+        propertyDescription: strOrUndef(c.propertyDescription),
+        shareUnits: num(c.shareUnits),
+        areaSqm: num(c.areaSqm),
+        totalAmount: num(c.totalAmount),
+        totalInWords: strOrUndef(c.totalInWords),
+        governmentalCosts: num(c.governmentalCosts),
+        constructionCosts: num(c.constructionCosts),
+        facilityRightsCosts: num(c.facilityRightsCosts),
+        destructionCost: num(c.destructionCost),
+        firstPartyShare: strOrUndef(c.firstPartyShare),
+        secondPartyShare: strOrUndef(c.secondPartyShare),
+        startDateInWords: strOrUndef(c.startDateInWords),
+        endDateInWords: strOrUndef(c.endDateInWords),
+        costDetailsPrepareDate: strOrUndef(c.costDetailsPrepareDate),
+        voucherTransferDate: strOrUndef(c.voucherTransferDate),
+        shareUnitsToTransfer: strOrUndef(c.shareUnitsToTransfer),
+        delayPenaltyFirstPartyPerDay: num(c.delayPenaltyFirstPartyPerDay),
+        delayPenaltySecondPartyPerDay: num(c.delayPenaltySecondPartyPerDay),
+      }),
     };
   }
 
@@ -848,6 +1022,8 @@ export function buildCreateContractPayload(
     endDate: jalaliOrIsoToIso(state.generic.endDate),
     deliveryDate: jalaliOrIsoToIso(state.generic.deliveryDueAt),
     officialDeedDate: jalaliOrIsoToIso(state.generic.officialDeedDueAt),
+    // Legacy fallback only when no typed details apply
+    termsAndConditions: buildTermsAndConditions(state),
   };
 }
 

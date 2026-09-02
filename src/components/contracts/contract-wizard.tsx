@@ -563,6 +563,7 @@ export function ContractWizard({
 
       {state.step === "property" ? (
         <PropertyPicker
+          contractType={state.contractType}
           selected={state.property}
           onSelect={(property) =>
             patch({ property, propertyId: property.id })
@@ -574,6 +575,7 @@ export function ContractWizard({
         <div className="space-y-5">
           <PartyPicker
             label="طرف اول"
+            contractType={state.contractType}
             selected={state.firstParty}
             onSelect={(party) =>
               patch({ firstParty: party, firstPartyId: party.id })
@@ -581,6 +583,7 @@ export function ContractWizard({
           />
           <PartyPicker
             label="طرف دوم"
+            contractType={state.contractType}
             selected={state.secondParty}
             onSelect={(party) =>
               patch({ secondParty: party, secondPartyId: party.id })
@@ -593,6 +596,7 @@ export function ContractWizard({
             <CardContent>
               <PartyPicker
                 label="افزودن شاهد"
+                contractType={state.contractType}
                 selected={null}
                 onSelect={toggleWitness}
               />
