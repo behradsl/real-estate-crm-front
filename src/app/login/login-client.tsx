@@ -7,6 +7,7 @@ import { Building2 } from "lucide-react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ApiError } from "@/lib/api/client";
 import { messages } from "@/lib/labels";
+import { safeInternalPath } from "@/lib/safe-redirect";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,14 +23,14 @@ export default function LoginClient() {
   const { login, user, loading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("admin@platform.local");
-  const [password, setPassword] = useState("Admin12345");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [organizationSlug, setOrganizationSlug] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace(searchParams.get("next") || "/dashboard");
+      router.replace(safeInternalPath(searchParams.get("next")));
     }
   }, [loading, user, router, searchParams]);
 
@@ -43,7 +44,7 @@ export default function LoginClient() {
         organizationSlug: organizationSlug.trim() || undefined,
       });
       toast.success(messages.signedIn);
-      router.replace(searchParams.get("next") || "/dashboard");
+      router.replace(safeInternalPath(searchParams.get("next")));
     } catch (error) {
       const message =
         error instanceof ApiError ? error.message : messages.loginFailed;

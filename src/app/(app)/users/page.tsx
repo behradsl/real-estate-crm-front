@@ -42,7 +42,7 @@ export default function UsersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("password123");
+  const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [role, setRole] = useState<UserRole>("AGENT");
@@ -74,7 +74,7 @@ export default function UsersPage() {
   function resetForm() {
     setEditingId(null);
     setEmail("");
-    setPassword("password123");
+    setPassword("");
     setFirstName("");
     setLastName("");
     setRole("AGENT");

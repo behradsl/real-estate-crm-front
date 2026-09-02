@@ -28,7 +28,7 @@ export default function NewOrganizationPage() {
   const [phone, setPhone] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("owner@namoneh.com");
-  const [ownerPassword, setOwnerPassword] = useState("password123");
+  const [ownerPassword, setOwnerPassword] = useState("");
   const [ownerFirstName, setOwnerFirstName] = useState("سارا");
   const [ownerLastName, setOwnerLastName] = useState("کریمی");
 
