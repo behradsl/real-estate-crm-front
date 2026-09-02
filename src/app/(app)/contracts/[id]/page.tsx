@@ -147,7 +147,11 @@ export default function ContractDetailPage() {
         id="contract-print-root"
         className="mb-6 rounded-xl border bg-muted/30 p-4"
       >
-        <ContractPreview state={wizardState} mode={previewMode} />
+        <ContractPreview
+          state={wizardState}
+          mode={previewMode}
+          organizationId={item.organizationId}
+        />
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 print:hidden">

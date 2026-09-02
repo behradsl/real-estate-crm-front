@@ -1,3 +1,5 @@
+import type { PrintFieldBox } from "@/lib/api/types";
+
 /**
  * Field boxes use percent-of-page coordinates (0–100) from the top-left.
  * z = page number (1-based). Templates today are single-page scans.
@@ -30,6 +32,47 @@ export function boxCss(box: FieldBox) {
   const width = Math.abs(box.end.x - box.start.x);
   const height = Math.abs(box.end.y - box.start.y);
   return { left, top, width, height, page: box.start.z };
+}
+
+/** Convert org print-layout mm box (bottom-left origin) to CSS % (top-left). */
+export function mmBoxToCssPercent(
+  box: PrintFieldBox,
+  paperWidthMm: number,
+  paperHeightMm: number,
+): { left: number; top: number; width: number; height: number; page: number } {
+  const w = paperWidthMm || 297;
+  const h = paperHeightMm || 420;
+  const startX = box.start.x;
+  const startY = box.start.y;
+  const endX = box.end.x;
+  const endY = box.end.y;
+  const left = (Math.min(startX, endX) / w) * 100;
+  const top = ((h - Math.max(startY, endY)) / h) * 100;
+  const width = (Math.abs(endX - startX) / w) * 100;
+  const height = (Math.abs(endY - startY) / h) * 100;
+  const page = Number(box.start.page ?? box.end.page ?? 1) || 1;
+  return { left, top, width, height, page };
+}
+
+/** Convert org layout Record (mm) into overlay FieldBox list (% top-left). */
+export function layoutFieldsToFieldBoxes(
+  fields: Record<string, PrintFieldBox>,
+  paperWidthMm: number,
+  paperHeightMm: number,
+): FieldBox[] {
+  return Object.entries(fields).map(([id, box]) => {
+    const css = mmBoxToCssPercent(box, paperWidthMm, paperHeightMm);
+    return {
+      id,
+      start: { x: css.left, y: css.top, z: css.page },
+      end: {
+        x: css.left + css.width,
+        y: css.top + css.height,
+        z: css.page,
+      },
+      align: box.align ?? "center",
+    };
+  });
 }
 
 /**

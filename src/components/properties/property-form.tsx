@@ -57,14 +57,18 @@ export function PropertyForm({
   initial,
   submitLabel,
   submittingLabel,
+  seedExamples = true,
   onSubmit,
 }: {
   initial?: Property | null;
   submitLabel: string;
   submittingLabel?: string;
+  /** Prefill demo values on create (disable in pickers). */
+  seedExamples?: boolean;
   onSubmit: (payload: CreatePropertyInput) => Promise<void>;
 }) {
   const isEdit = Boolean(initial);
+  const useSeed = !isEdit && seedExamples;
   const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -72,26 +76,26 @@ export function PropertyForm({
     initial?.propertyType ?? "APARTMENT",
   );
   const [referenceCode, setReferenceCode] = useState(initial?.referenceCode ?? "");
-  const [areaSqm, setAreaSqm] = useState(str(initial?.areaSqm ?? (isEdit ? "" : "120.5")));
-  const [floor, setFloor] = useState(str(initial?.floor ?? (isEdit ? "" : "3")));
+  const [areaSqm, setAreaSqm] = useState(str(initial?.areaSqm ?? (useSeed ? "120.5" : "")));
+  const [floor, setFloor] = useState(str(initial?.floor ?? (useSeed ? "3" : "")));
   const [totalFloors, setTotalFloors] = useState(
-    str(initial?.totalFloors ?? (isEdit ? "" : "5")),
+    str(initial?.totalFloors ?? (useSeed ? "5" : "")),
   );
   const [yearBuilt, setYearBuilt] = useState(
-    str(initial?.yearBuilt ?? (isEdit ? "" : "2018")),
+    str(initial?.yearBuilt ?? (useSeed ? "2018" : "")),
   );
   const [bedrooms, setBedrooms] = useState(
-    str(initial?.bedrooms ?? (isEdit ? "" : "3")),
+    str(initial?.bedrooms ?? (useSeed ? "3" : "")),
   );
   const [bathrooms, setBathrooms] = useState(
-    str(initial?.bathrooms ?? (isEdit ? "" : "2")),
+    str(initial?.bathrooms ?? (useSeed ? "2" : "")),
   );
-  const [city, setCity] = useState(initial?.address?.city ?? (isEdit ? "" : "تهران"));
+  const [city, setCity] = useState(initial?.address?.city ?? (useSeed ? "تهران" : ""));
   const [province, setProvince] = useState(
-    initial?.address?.province ?? (isEdit ? "" : "تهران"),
+    initial?.address?.province ?? (useSeed ? "تهران" : ""),
   );
   const [details, setDetails] = useState(
-    initial?.address?.details ?? (isEdit ? "" : "ونک"),
+    initial?.address?.details ?? (useSeed ? "ونک" : ""),
   );
   const [plaque, setPlaque] = useState(initial?.address?.plaque ?? "");
   const [postalCode, setPostalCode] = useState(initial?.address?.postalCode ?? "");
@@ -102,36 +106,50 @@ export function PropertyForm({
   const [telephone, setTelephone] = useState(initial?.telephone ?? false);
   const [parking, setParking] = useState(initial?.parking ?? true);
   const [parkingCount, setParkingCount] = useState(
-    str(initial?.parkingCount ?? initial?.parkingSpots ?? (isEdit ? "" : "1")),
+    str(initial?.parkingCount ?? initial?.parkingSpots ?? (useSeed ? "1" : "")),
   );
   const [storage, setStorage] = useState(initial?.storage ?? true);
   const [storageCount, setStorageCount] = useState(
-    str(initial?.storageCount ?? (isEdit ? "" : "1")),
+    str(initial?.storageCount ?? (useSeed ? "1" : "")),
   );
   const [storageArea, setStorageArea] = useState(
-    str(initial?.storageArea ?? (isEdit ? "" : "15")),
+    str(initial?.storageArea ?? (useSeed ? "15" : "")),
   );
   const [elevator, setElevator] = useState(initial?.elevator ?? true);
   const [otherFacilities, setOtherFacilities] = useState<OtherFacility[]>(
     initial?.otherFacilities?.length
       ? initial.otherFacilities
-      : isEdit
-        ? []
-        : otherFacilitiesExample,
+      : useSeed
+        ? otherFacilitiesExample
+        : [],
   );
 
   const [deed, setDeed] = useState({
-    cadastralNumber: initial?.deedInfo?.cadastralNumber ?? deedInfoDefaults.cadastralNumber,
-    subParcelNumber: initial?.deedInfo?.subParcelNumber ?? deedInfoDefaults.subParcelNumber,
+    cadastralNumber:
+      initial?.deedInfo?.cadastralNumber ??
+      (useSeed ? deedInfoDefaults.cadastralNumber : ""),
+    subParcelNumber:
+      initial?.deedInfo?.subParcelNumber ??
+      (useSeed ? deedInfoDefaults.subParcelNumber : ""),
     mainParcelNumber:
-      initial?.deedInfo?.mainParcelNumber ?? deedInfoDefaults.mainParcelNumber,
-    plotNumber: initial?.deedInfo?.plotNumber ?? deedInfoDefaults.plotNumber,
+      initial?.deedInfo?.mainParcelNumber ??
+      (useSeed ? deedInfoDefaults.mainParcelNumber : ""),
+    plotNumber:
+      initial?.deedInfo?.plotNumber ?? (useSeed ? deedInfoDefaults.plotNumber : ""),
     cadastralDistrict:
-      initial?.deedInfo?.cadastralDistrict ?? deedInfoDefaults.cadastralDistrict,
+      initial?.deedInfo?.cadastralDistrict ??
+      (useSeed ? deedInfoDefaults.cadastralDistrict : ""),
     registrationArea:
-      initial?.deedInfo?.registrationArea ?? deedInfoDefaults.registrationArea,
-    areaSqm: str(initial?.deedInfo?.areaSqm ?? deedInfoDefaults.areaSqm),
-    postalCode: initial?.deedInfo?.postalCode ?? deedInfoDefaults.postalCode,
+      initial?.deedInfo?.registrationArea ??
+      (useSeed ? deedInfoDefaults.registrationArea : ""),
+    areaSqm: str(
+      initial?.deedInfo?.areaSqm ?? (useSeed ? deedInfoDefaults.areaSqm : ""),
+    ),
+    postalCode:
+      initial?.deedInfo?.postalCode ?? (useSeed ? deedInfoDefaults.postalCode : ""),
+    deedSerialNumber:
+      initial?.deedInfo?.deedSerialNumber ??
+      (useSeed ? deedInfoDefaults.deedSerialNumber : ""),
   });
 
   async function handleSubmit(event: FormEvent) {
@@ -177,6 +195,7 @@ export function PropertyForm({
           registrationArea: emptyToUndefined(deed.registrationArea),
           areaSqm: deed.areaSqm ? Number(deed.areaSqm) : undefined,
           postalCode: emptyToUndefined(deed.postalCode),
+          deedSerialNumber: emptyToUndefined(deed.deedSerialNumber),
         },
       });
     } finally {
@@ -206,6 +225,7 @@ export function PropertyForm({
     ["شماره قطعه", "plotNumber"],
     ["بخش ثبتی", "cadastralDistrict"],
     ["حوزه ثبتی", "registrationArea"],
+    ["سریال سند", "deedSerialNumber"],
     ["کد پستی سند", "postalCode"],
   ] as const;
 

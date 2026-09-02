@@ -1,6 +1,8 @@
 import { apiFetch } from "./client";
 import type {
   Contract,
+  ContractPrintLayout,
+  ContractType,
   CreateContractInput,
   CreateOrganizationInput,
   CreatePartyInput,
@@ -12,6 +14,7 @@ import type {
   Party,
   Property,
   UpdateOrganizationInput,
+  UpsertPrintLayoutInput,
   User,
   ContractSignature,
 } from "./types";
@@ -99,6 +102,33 @@ export const partiesApi = {
     }),
   remove: (id: string) =>
     apiFetch<Party>(`/parties/${id}`, { method: "DELETE" }),
+};
+
+export const printLayoutsApi = {
+  catalog: (organizationId: string) =>
+    apiFetch<Record<ContractType, string[]>>(
+      `/organizations/${organizationId}/print-layouts/catalog`,
+    ),
+  list: (organizationId: string) =>
+    apiFetch<ContractPrintLayout[]>(
+      `/organizations/${organizationId}/print-layouts`,
+    ),
+  get: (organizationId: string, contractType: ContractType) =>
+    apiFetch<ContractPrintLayout>(
+      `/organizations/${organizationId}/print-layouts/${contractType}`,
+    ),
+  upsert: (
+    organizationId: string,
+    contractType: ContractType,
+    input: UpsertPrintLayoutInput,
+  ) =>
+    apiFetch<ContractPrintLayout>(
+      `/organizations/${organizationId}/print-layouts/${contractType}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(input),
+      },
+    ),
 };
 
 export const contractsApi = {

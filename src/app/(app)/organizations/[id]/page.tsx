@@ -41,9 +41,16 @@ export default function OrganizationDetailPage() {
         description={`شناسه: ${item.slug}`}
         actions={
           canEdit ? (
-            <Button asChild variant="secondary">
-              <Link href={`/organizations/${item.id}/edit`}>{messages.edit}</Link>
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline">
+                <Link href={`/organizations/${item.id}/print-layouts`}>
+                  چیدمان چاپ
+                </Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link href={`/organizations/${item.id}/edit`}>{messages.edit}</Link>
+              </Button>
+            </div>
           ) : null
         }
       />
@@ -56,6 +63,7 @@ export default function OrganizationDetailPage() {
             <p>ایمیل: {item.email ?? messages.none}</p>
             <p>تلفن: {item.phone ?? messages.none}</p>
             <p>وب‌سایت: {item.website ?? messages.none}</p>
+            <p>شماره مجوز: {item.licenseNumber ?? messages.none}</p>
           </CardContent>
         </Card>
         <Card>

@@ -9,6 +9,7 @@ export const deedInfoDefaults = {
   registrationArea: "همدان",
   areaSqm: "120.5",
   postalCode: "6513112345",
+  deedSerialNumber: "SN-998877",
 };
 
 export const otherFacilitiesExample: OtherFacility[] = [

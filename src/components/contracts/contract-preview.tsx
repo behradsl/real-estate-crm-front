@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { printLayoutsApi } from "@/lib/api";
+import type { ContractPrintLayout } from "@/lib/api/types";
+import { useAuth } from "@/components/providers/auth-provider";
 import type { ContractWizardState } from "@/lib/contracts/wizard";
 import {
   boxCss,
   dynamicFontSizePx,
   getFieldMap,
+  layoutFieldsToFieldBoxes,
   valuesFromWizardState,
   type FieldBox,
 } from "@/lib/contracts/field-maps";
@@ -28,8 +32,11 @@ function OverlayField({
   if (!text.trim()) return null;
 
   const { left, top, width, height } = boxCss(box);
-  const boxWidthPx = (containerWidth * width) / 100;
-  const boxHeightPx = (containerHeight * height) / 100;
+  // Keep a tiny visible box so mis-entered equal start/end still show during calibration
+  const widthPct = Math.max(width, 0.5);
+  const heightPct = Math.max(height, 0.4);
+  const boxWidthPx = (containerWidth * widthPct) / 100;
+  const boxHeightPx = (containerHeight * heightPct) / 100;
   const fontSize = dynamicFontSizePx({
     text,
     boxWidthPx,
@@ -50,8 +57,8 @@ function OverlayField({
       style={{
         left: `${left}%`,
         top: `${top}%`,
-        width: `${width}%`,
-        height: `${height}%`,
+        width: `${widthPct}%`,
+        height: `${heightPct}%`,
         justifyContent: justify,
         fontSize: `${fontSize}px`,
         lineHeight: 1.1,
@@ -68,9 +75,11 @@ function OverlayField({
 export function OverlayFields({
   state,
   page = 1,
+  layout = null,
 }: {
   state: ContractWizardState;
   page?: number;
+  layout?: ContractPrintLayout | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -90,12 +99,25 @@ export function OverlayFields({
     return () => observer.disconnect();
   }, []);
 
-  const map = getFieldMap(state.contractType);
+  const seedMap = getFieldMap(state.contractType);
+  const allFields =
+    layout != null && Object.keys(layout.fields ?? {}).length > 0
+      ? layoutFieldsToFieldBoxes(
+          layout.fields,
+          layout.paperWidthMm,
+          layout.paperHeightMm,
+        )
+      : seedMap.fields;
+
+  const fields = allFields.filter((f) => Number(f.start.z) === page);
   const values = valuesFromWizardState(state);
-  const fields = map.fields.filter((f) => f.start.z === page);
 
   return (
-    <div ref={ref} className="absolute inset-0" dir="rtl">
+    <div
+      ref={ref}
+      className="pointer-events-none absolute inset-0 z-10"
+      dir="rtl"
+    >
       {size.width > 0
         ? fields.map((box) => (
             <OverlayField
@@ -145,7 +167,11 @@ function PdfPageCanvas({ url }: { url: string }) {
         if (!cancelled) setLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "بارگذاری پیش‌نویس با خطا مواجه شد");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "بارگذاری پیش‌نویس با خطا مواجه شد",
+          );
           setLoading(false);
         }
       }
@@ -158,7 +184,7 @@ function PdfPageCanvas({ url }: { url: string }) {
   }, [url]);
 
   return (
-    <div className="relative w-full">
+    <div className="relative z-0 w-full">
       {loading ? (
         <div className="flex aspect-[210/297] items-center justify-center bg-muted/40 text-sm text-muted-foreground">
           در حال بارگذاری پیش‌نویس قرارداد…
@@ -180,10 +206,50 @@ function PdfPageCanvas({ url }: { url: string }) {
 export function ContractPreview({
   state,
   mode,
+  organizationId,
+  layout: layoutProp,
 }: {
   state: ContractWizardState;
   mode: ContractPreviewMode;
+  organizationId?: string | null;
+  layout?: ContractPrintLayout | null;
 }) {
+  const { user } = useAuth();
+  const orgId =
+    organizationId ??
+    state.property?.organizationId ??
+    user?.organizationId ??
+    null;
+  const [loadedLayout, setLoadedLayout] = useState<ContractPrintLayout | null>(
+    layoutProp ?? null,
+  );
+
+  useEffect(() => {
+    if (layoutProp !== undefined) {
+      setLoadedLayout(layoutProp);
+      return;
+    }
+    if (!orgId) {
+      setLoadedLayout(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const layout = await printLayoutsApi.get(orgId, state.contractType);
+        if (!cancelled) setLoadedLayout(layout);
+      } catch {
+        if (!cancelled) {
+          // 404 / forbidden / network → fall back to seed field maps
+          setLoadedLayout(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId, state.contractType, layoutProp]);
+
   const pdfUrl = templatePdfUrl(state.contractType);
   const showPdf = mode === "full";
 
@@ -192,16 +258,18 @@ export function ContractPreview({
       className="contract-preview-overlay relative mx-auto w-full max-w-[210mm] overflow-hidden bg-white shadow-sm"
       data-print-mode={mode}
     >
-      {showPdf && pdfUrl ? (
-        <div className="contract-pdf-layer">
-          <PdfPageCanvas url={pdfUrl} />
-        </div>
-      ) : (
-        <div className="aspect-[210/297] w-full bg-white" />
-      )}
-      <OverlayFields state={state} page={1} />
+      <div className="relative w-full">
+        {showPdf && pdfUrl ? (
+          <div className="contract-pdf-layer relative z-0">
+            <PdfPageCanvas url={pdfUrl} />
+          </div>
+        ) : (
+          <div className="aspect-[210/297] w-full bg-white" />
+        )}
+        <OverlayFields state={state} page={1} layout={loadedLayout} />
+      </div>
       {!pdfUrl && showPdf ? (
-        <p className="absolute inset-x-0 top-4 text-center text-sm text-muted-foreground">
+        <p className="absolute inset-x-0 top-4 z-20 text-center text-sm text-muted-foreground">
           برای این نوع قرارداد پیش‌نویس چاپی تعریف نشده است.
         </p>
       ) : null}

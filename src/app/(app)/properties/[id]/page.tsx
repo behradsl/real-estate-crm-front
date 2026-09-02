@@ -134,6 +134,7 @@ export default function PropertyDetailPage() {
                   {deed.cadastralDistrict ?? messages.none}
                 </p>
                 <p>حوزه ثبتی: {deed.registrationArea ?? messages.none}</p>
+                <p>سریال سند: {deed.deedSerialNumber ?? messages.none}</p>
                 <p>متراژ سند: {formatArea(deed.areaSqm)}</p>
                 <p>کد پستی: {deed.postalCode ?? messages.none}</p>
               </>

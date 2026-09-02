@@ -84,6 +84,7 @@ export interface Organization {
   phone: string | null;
   email: string | null;
   website: string | null;
+  licenseNumber: string | null;
   addressId: string | null;
   address?: Address | null;
   createdAt: string;
@@ -101,9 +102,32 @@ export interface DeedInfo {
   registrationArea: string | null;
   areaSqm: number | null;
   postalCode: string | null;
+  deedSerialNumber: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+export type PrintPoint = { x: number; y: number; page?: number };
+export type PrintFieldBox = {
+  start: PrintPoint;
+  end: PrintPoint;
+  align?: "center" | "right" | "left";
+};
+export interface ContractPrintLayout {
+  id: string;
+  organizationId: string;
+  contractType: ContractType;
+  paperWidthMm: number;
+  paperHeightMm: number;
+  fields: Record<string, PrintFieldBox>;
+  createdAt: string;
+  updatedAt: string;
+}
+export type UpsertPrintLayoutInput = {
+  paperWidthMm?: number;
+  paperHeightMm?: number;
+  fields: Record<string, PrintFieldBox>;
+};
 
 export interface RelatedContract {
   id: string;
@@ -246,6 +270,7 @@ export interface CreateOrganizationInput {
   phone?: string;
   email?: string;
   website?: string;
+  licenseNumber?: string;
   address?: AddressInput;
   owner: {
     email: string;
@@ -262,6 +287,7 @@ export interface UpdateOrganizationInput {
   phone?: string;
   email?: string;
   website?: string;
+  licenseNumber?: string;
   address?: AddressInput;
 }
 
@@ -312,6 +338,7 @@ export interface CreatePropertyInput {
     registrationArea?: string;
     areaSqm?: number;
     postalCode?: string;
+    deedSerialNumber?: string;
   };
 }
 

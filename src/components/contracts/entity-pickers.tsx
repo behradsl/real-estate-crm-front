@@ -1,23 +1,17 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { partiesApi, propertiesApi } from "@/lib/api";
 import { ApiError } from "@/lib/api/client";
-import type { Party, PartyType, Property, PropertyType } from "@/lib/api/types";
-import { PROPERTY_TYPES } from "@/lib/examples";
+import type { Party, Property } from "@/lib/api/types";
 import { partyDisplayName } from "@/lib/contracts/wizard";
 import { messages, partyTypeLabels, propertyTypeLabels } from "@/lib/labels";
+import { PartyForm } from "@/components/parties/party-form";
+import { PropertyForm } from "@/components/properties/property-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -26,11 +20,55 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
-function emptyToUndefined(value: string) {
-  const trimmed = value.trim();
-  return trimmed ? trimmed : undefined;
+function normalize(value: string | null | undefined) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function propertyMatches(item: Property, query: string) {
+  if (!query) return true;
+  const q = normalize(query);
+  const haystack = [
+    item.title,
+    item.referenceCode,
+    item.description,
+    propertyTypeLabels[item.propertyType],
+    item.address?.city,
+    item.address?.province,
+    item.address?.details,
+    item.deedInfo?.cadastralNumber,
+  ]
+    .map(normalize)
+    .join(" ");
+  return haystack.includes(q);
+}
+
+function partyMatches(item: Party, query: string) {
+  if (!query) return true;
+  const q = normalize(query);
+  const haystack = [
+    partyDisplayName(item),
+    item.firstName,
+    item.lastName,
+    item.companyName,
+    item.nationalCode,
+    item.economicCode,
+    item.phone,
+    item.fatherName,
+    partyTypeLabels[item.type],
+    item.address?.city,
+    item.address?.province,
+  ]
+    .map(normalize)
+    .join(" ");
+  return haystack.includes(q);
 }
 
 export function PropertyPicker({
@@ -41,43 +79,28 @@ export function PropertyPicker({
   onSelect: (property: Property) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("select");
   const [items, setItems] = useState<Property[]>([]);
-  const [title, setTitle] = useState("");
-  const [propertyType, setPropertyType] = useState<PropertyType>("APARTMENT");
-  const [city, setCity] = useState("همدان");
-  const [province, setProvince] = useState("همدان");
-  const [areaSqm, setAreaSqm] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (!open) return;
+    setLoading(true);
     void propertiesApi
       .list()
       .then(setItems)
       .catch((error) =>
         toast.error(error instanceof ApiError ? error.message : messages.loadFailed),
-      );
+      )
+      .finally(() => setLoading(false));
   }, [open]);
 
-  async function onCreate(event: FormEvent) {
-    event.preventDefault();
-    setCreating(true);
-    try {
-      const created = await propertiesApi.create({
-        title,
-        propertyType,
-        areaSqm: areaSqm ? Number(areaSqm) : undefined,
-        address: { city, province },
-      });
-      onSelect(created);
-      setOpen(false);
-      toast.success("ملک ثبت شد");
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : messages.createFailed);
-    } finally {
-      setCreating(false);
-    }
-  }
+  const filtered = useMemo(
+    () => items.filter((item) => propertyMatches(item, search)),
+    [items, search],
+  );
 
   return (
     <div className="space-y-3 rounded-xl border bg-card p-5">
@@ -88,91 +111,114 @@ export function PropertyPicker({
             {selected ? selected.title : messages.noneSelected}
           </p>
         </div>
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (next) {
+              setTab("select");
+              setSearch("");
+              setFormKey((k) => k + 1);
+            }
+          }}
+        >
           <SheetTrigger asChild>
             <Button type="button" variant="outline">
               {messages.selectOrCreate}
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-            <SheetHeader>
-              <SheetTitle>انتخاب ملک</SheetTitle>
+          <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+            <SheetHeader className="border-b px-4 py-4 text-start">
+              <SheetTitle>انتخاب یا ثبت ملک</SheetTitle>
               <SheetDescription>
-                از فهرست موجود انتخاب کنید یا ملک جدید ثبت کنید.
+                جستجو در املاک موجود، یا ثبت ملک با تمام مشخصات.
               </SheetDescription>
             </SheetHeader>
-            <div className="mt-4 space-y-2 px-4">
-              {items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-start text-sm leading-relaxed hover:bg-muted"
-                  onClick={() => {
-                    onSelect(item);
-                    setOpen(false);
-                  }}
-                >
-                  <span>{item.title}</span>
-                  <span className="text-muted-foreground">
-                    {propertyTypeLabels[item.propertyType]}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <form className="mt-6 space-y-4 border-t px-4 pt-4 pb-6" onSubmit={onCreate}>
-              <p className="text-sm font-medium leading-relaxed">ثبت ملک جدید</p>
-              <div className="space-y-2">
-                <Label>عنوان</Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>نوع ملک</Label>
-                <Select
-                  value={propertyType}
-                  onValueChange={(v) => setPropertyType(v as PropertyType)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROPERTY_TYPES.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {propertyTypeLabels[type]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <Tabs
+              value={tab}
+              onValueChange={setTab}
+              className="flex min-h-0 flex-1 flex-col px-4 pb-4"
+            >
+              <TabsList className="mt-3 w-full">
+                <TabsTrigger value="select" className="flex-1">
+                  انتخاب از موجود
+                </TabsTrigger>
+                <TabsTrigger value="create" className="flex-1">
+                  ثبت جدید
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent
+                value="select"
+                className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
+              >
                 <div className="space-y-2">
-                  <Label>شهر</Label>
-                  <Input value={city} onChange={(e) => setCity(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>استان</Label>
+                  <Label htmlFor="property-search">جستجو</Label>
                   <Input
-                    value={province}
-                    onChange={(e) => setProvince(e.target.value)}
-                    required
+                    id="property-search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="عنوان، کد ارجاع، شهر، پلاک ثبتی…"
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>متراژ (متر مربع)</Label>
-                <Input
-                  type="number"
-                  value={areaSqm}
-                  onChange={(e) => setAreaSqm(e.target.value)}
+                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-2">
+                  {loading ? (
+                    <p className="text-sm text-muted-foreground">{messages.loading}</p>
+                  ) : filtered.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      موردی یافت نشد. می‌توانید از تب «ثبت جدید» استفاده کنید.
+                    </p>
+                  ) : (
+                    filtered.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="flex w-full flex-col gap-1 rounded-lg border px-3 py-2.5 text-start text-sm leading-relaxed hover:bg-muted"
+                        onClick={() => {
+                          onSelect(item);
+                          setOpen(false);
+                        }}
+                      >
+                        <span className="font-medium">{item.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {propertyTypeLabels[item.propertyType]}
+                          {item.referenceCode ? ` · ${item.referenceCode}` : ""}
+                          {item.address
+                            ? ` · ${item.address.city}، ${item.address.province}`
+                            : ""}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent
+                value="create"
+                className="mt-4 min-h-0 flex-1 overflow-y-auto pb-4"
+              >
+                <PropertyForm
+                  key={formKey}
+                  seedExamples={false}
+                  submitLabel={messages.createAndSelect}
+                  submittingLabel={messages.creating}
+                  onSubmit={async (payload) => {
+                    try {
+                      const created = await propertiesApi.create(payload);
+                      onSelect(created);
+                      setOpen(false);
+                      toast.success("ملک ثبت و انتخاب شد");
+                    } catch (error) {
+                      toast.error(
+                        error instanceof ApiError
+                          ? error.message
+                          : messages.createFailed,
+                      );
+                    }
+                  }}
                 />
-              </div>
-              <Button disabled={creating} type="submit">
-                {creating ? messages.creating : messages.createAndSelect}
-              </Button>
-            </form>
+              </TabsContent>
+            </Tabs>
           </SheetContent>
         </Sheet>
       </div>
@@ -190,52 +236,28 @@ export function PartyPicker({
   onSelect: (party: Party) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState("select");
   const [items, setItems] = useState<Party[]>([]);
-  const [type, setType] = useState<PartyType>("PERSON");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [nationalCode, setNationalCode] = useState("");
-  const [fatherName, setFatherName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("همدان");
-  const [province, setProvince] = useState("همدان");
-  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (!open) return;
+    setLoading(true);
     void partiesApi
       .list()
       .then(setItems)
       .catch((error) =>
         toast.error(error instanceof ApiError ? error.message : messages.loadFailed),
-      );
+      )
+      .finally(() => setLoading(false));
   }, [open]);
 
-  async function onCreate(event: FormEvent) {
-    event.preventDefault();
-    setCreating(true);
-    try {
-      const created = await partiesApi.create({
-        type,
-        firstName: type === "PERSON" ? emptyToUndefined(firstName) : undefined,
-        lastName: type === "PERSON" ? emptyToUndefined(lastName) : undefined,
-        companyName:
-          type === "COMPANY" ? emptyToUndefined(companyName) : undefined,
-        nationalCode: emptyToUndefined(nationalCode),
-        fatherName: emptyToUndefined(fatherName),
-        phone: emptyToUndefined(phone),
-        address: { city, province },
-      });
-      onSelect(created);
-      setOpen(false);
-      toast.success("طرف قرارداد ثبت شد");
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : messages.createFailed);
-    } finally {
-      setCreating(false);
-    }
-  }
+  const filtered = useMemo(
+    () => items.filter((item) => partyMatches(item, search)),
+    [items, search],
+  );
 
   return (
     <div className="space-y-3 rounded-xl border bg-card p-5">
@@ -247,126 +269,112 @@ export function PartyPicker({
             {selected?.nationalCode ? ` — ${selected.nationalCode}` : ""}
           </p>
         </div>
-        <Sheet open={open} onOpenChange={setOpen}>
+        <Sheet
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (next) {
+              setTab("select");
+              setSearch("");
+              setFormKey((k) => k + 1);
+            }
+          }}
+        >
           <SheetTrigger asChild>
             <Button type="button" variant="outline">
               {messages.selectOrCreate}
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
-            <SheetHeader>
+          <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+            <SheetHeader className="border-b px-4 py-4 text-start">
               <SheetTitle>{label}</SheetTitle>
               <SheetDescription>
-                از فهرست موجود انتخاب کنید یا طرف جدید ثبت کنید.
+                جستجو در طرفین موجود، یا ثبت طرف جدید با تمام مشخصات.
               </SheetDescription>
             </SheetHeader>
-            <div className="mt-4 space-y-2 px-4">
-              {items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-start text-sm leading-relaxed hover:bg-muted"
-                  onClick={() => {
-                    onSelect(item);
-                    setOpen(false);
+            <Tabs
+              value={tab}
+              onValueChange={setTab}
+              className="flex min-h-0 flex-1 flex-col px-4 pb-4"
+            >
+              <TabsList className="mt-3 w-full">
+                <TabsTrigger value="select" className="flex-1">
+                  انتخاب از موجود
+                </TabsTrigger>
+                <TabsTrigger value="create" className="flex-1">
+                  ثبت جدید
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent
+                value="select"
+                className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-hidden"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor={`party-search-${label}`}>جستجو</Label>
+                  <Input
+                    id={`party-search-${label}`}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="نام، کد ملی، تلفن، شرکت…"
+                  />
+                </div>
+                <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pb-2">
+                  {loading ? (
+                    <p className="text-sm text-muted-foreground">{messages.loading}</p>
+                  ) : filtered.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      موردی یافت نشد. می‌توانید از تب «ثبت جدید» استفاده کنید.
+                    </p>
+                  ) : (
+                    filtered.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="flex w-full flex-col gap-1 rounded-lg border px-3 py-2.5 text-start text-sm leading-relaxed hover:bg-muted"
+                        onClick={() => {
+                          onSelect(item);
+                          setOpen(false);
+                        }}
+                      >
+                        <span className="font-medium">{partyDisplayName(item)}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {partyTypeLabels[item.type]}
+                          {item.nationalCode ? ` · ${item.nationalCode}` : ""}
+                          {item.phone ? ` · ${item.phone}` : ""}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent
+                value="create"
+                className="mt-4 min-h-0 flex-1 overflow-y-auto pb-4"
+              >
+                <PartyForm
+                  key={formKey}
+                  seedExamples={false}
+                  submitLabel={messages.createAndSelect}
+                  submittingLabel={messages.creating}
+                  onSubmit={async (payload) => {
+                    try {
+                      const created = await partiesApi.create(payload);
+                      onSelect(created);
+                      setOpen(false);
+                      toast.success("طرف قرارداد ثبت و انتخاب شد");
+                    } catch (error) {
+                      toast.error(
+                        error instanceof ApiError
+                          ? error.message
+                          : messages.createFailed,
+                      );
+                    }
                   }}
-                >
-                  <span>{partyDisplayName(item)}</span>
-                  <span className="text-muted-foreground">
-                    {partyTypeLabels[item.type]}
-                  </span>
-                </button>
-              ))}
-            </div>
-            <form className="mt-6 space-y-4 border-t px-4 pt-4 pb-6" onSubmit={onCreate}>
-              <p className="text-sm font-medium leading-relaxed">ثبت طرف جدید</p>
-              <div className="space-y-2">
-                <Label>نوع</Label>
-                <Select
-                  value={type}
-                  onValueChange={(v) => setType(v as PartyType)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="PERSON">{partyTypeLabels.PERSON}</SelectItem>
-                    <SelectItem value="COMPANY">{partyTypeLabels.COMPANY}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {type === "PERSON" ? (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>نام</Label>
-                      <Input
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>نام خانوادگی</Label>
-                      <Input
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>نام پدر</Label>
-                    <Input
-                      value={fatherName}
-                      onChange={(e) => setFatherName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>کد ملی</Label>
-                    <Input
-                      value={nationalCode}
-                      onChange={(e) => setNationalCode(e.target.value)}
-                      dir="ltr"
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-2">
-                  <Label>نام شرکت</Label>
-                  <Input
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>تلفن</Label>
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  dir="ltr"
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>شهر</Label>
-                  <Input value={city} onChange={(e) => setCity(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>استان</Label>
-                  <Input
-                    value={province}
-                    onChange={(e) => setProvince(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <Button disabled={creating} type="submit">
-                {creating ? messages.creating : messages.createAndSelect}
-              </Button>
-            </form>
+              </TabsContent>
+            </Tabs>
           </SheetContent>
         </Sheet>
       </div>

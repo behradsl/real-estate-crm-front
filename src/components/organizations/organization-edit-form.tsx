@@ -28,6 +28,9 @@ export function OrganizationEditForm({
   const [email, setEmail] = useState(initial.email ?? "");
   const [phone, setPhone] = useState(initial.phone ?? "");
   const [website, setWebsite] = useState(initial.website ?? "");
+  const [licenseNumber, setLicenseNumber] = useState(
+    initial.licenseNumber ?? "",
+  );
   const [city, setCity] = useState(initial.address?.city ?? "");
   const [province, setProvince] = useState(initial.address?.province ?? "");
   const [details, setDetails] = useState(initial.address?.details ?? "");
@@ -44,6 +47,7 @@ export function OrganizationEditForm({
         email: emptyToUndefined(email),
         phone: emptyToUndefined(phone),
         website: emptyToUndefined(website),
+        licenseNumber: emptyToUndefined(licenseNumber),
       };
 
       if (city.trim() && province.trim()) {
@@ -98,13 +102,21 @@ export function OrganizationEditForm({
               dir="ltr"
             />
           </div>
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-2">
             <Label>وب‌سایت</Label>
             <Input
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
               dir="ltr"
               placeholder="https://"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>شماره مجوز</Label>
+            <Input
+              value={licenseNumber}
+              onChange={(e) => setLicenseNumber(e.target.value)}
+              dir="ltr"
             />
           </div>
         </CardContent>

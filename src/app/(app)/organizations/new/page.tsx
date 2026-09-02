@@ -26,6 +26,7 @@ export default function NewOrganizationPage() {
   const [slug, setSlug] = useState("namoneh");
   const [email, setEmail] = useState("info@namoneh.com");
   const [phone, setPhone] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("owner@namoneh.com");
   const [ownerPassword, setOwnerPassword] = useState("password123");
   const [ownerFirstName, setOwnerFirstName] = useState("سارا");
@@ -48,6 +49,7 @@ export default function NewOrganizationPage() {
         slug,
         email: emptyToUndefined(email),
         phone: emptyToUndefined(phone),
+        licenseNumber: emptyToUndefined(licenseNumber),
         owner: {
           email: ownerEmail,
           password: ownerPassword,
@@ -98,6 +100,14 @@ export default function NewOrganizationPage() {
               <Input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>شماره مجوز</Label>
+              <Input
+                value={licenseNumber}
+                onChange={(e) => setLicenseNumber(e.target.value)}
                 dir="ltr"
               />
             </div>

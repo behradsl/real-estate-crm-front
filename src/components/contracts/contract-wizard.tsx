@@ -14,6 +14,7 @@ import {
   buildCreateContractPayload,
   createInitialWizardState,
   type ContractWizardState,
+  type LawyerForm,
   type WizardStep,
 } from "@/lib/contracts/wizard";
 import {
@@ -42,6 +43,223 @@ import { Badge } from "@/components/ui/badge";
 
 function stepIndex(step: WizardStep) {
   return WIZARD_STEPS.findIndex((s) => s.id === step);
+}
+
+const LAWYER_FIELDS: { key: keyof LawyerForm; label: string }[] = [
+  { key: "name", label: "نام و نام خانوادگی" },
+  { key: "fatherName", label: "نام پدر" },
+  { key: "identityNumber", label: "شماره شناسنامه" },
+  { key: "birthPlace", label: "محل تولد" },
+  { key: "birthDate", label: "تاریخ تولد" },
+  { key: "identityExportPlace", label: "محل صدور" },
+  { key: "nationalCode", label: "کد ملی" },
+  { key: "address", label: "نشانی" },
+  { key: "postalCode", label: "کد پستی" },
+  { key: "cause", label: "علت وکالت" },
+];
+
+const SALE_FIELDS: {
+  key: keyof ContractWizardState["sale"];
+  label: string;
+  span?: boolean;
+}[] = [
+  { key: "shareUnits", label: "دانگ" },
+  { key: "totalAmount", label: "مبلغ کل (ریال)" },
+  { key: "totalInWords", label: "مبلغ به حروف" },
+  { key: "pricePerSqm", label: "قیمت هر متر (ریال)" },
+  { key: "prePaymentAmount", label: "بیعانه (ریال)" },
+  { key: "prePaymentChequeNumber", label: "شماره چک بیعانه" },
+  { key: "prePaymentBankName", label: "بانک بیعانه" },
+  { key: "prePaymentBankBranch", label: "شعبه بانک بیعانه" },
+  { key: "remainderAmount", label: "الباقی (ریال)" },
+  { key: "voucherRegistrationDate", label: "تاریخ ثبت سند/بنچاق" },
+  { key: "voucherOrganizationNumber", label: "شماره دفترخانه / سازمان" },
+  { key: "deliveryDate", label: "تاریخ تحویل" },
+  { key: "cancelationPenalty", label: "وجه التزام فسخ" },
+  { key: "breachPenalty", label: "وجه التزام تخلف" },
+  { key: "notaryFeePayer", label: "عهده‌دار هزینه دفترخانه" },
+  {
+    key: "delayPenaltyFirstPartyPerDay",
+    label: "وجه التزام تأخیر طرف اول (روزانه)",
+  },
+  {
+    key: "delayPenaltySecondPartyPerDay",
+    label: "وجه التزام تأخیر طرف دوم (روزانه)",
+  },
+];
+
+const RENT_FIELDS: {
+  key: keyof ContractWizardState["rent"];
+  label: string;
+}[] = [
+  { key: "shareUnits", label: "دانگ" },
+  { key: "durationMonths", label: "مدت (ماه)" },
+  { key: "fromDate", label: "از تاریخ" },
+  { key: "toDate", label: "تا تاریخ" },
+  { key: "monthlyAmount", label: "اجاره ماهانه (ریال)" },
+  { key: "monthlyInWords", label: "اجاره ماهانه به حروف" },
+  { key: "mortgageAmount", label: "رهن / ودیعه (ریال)" },
+  { key: "mortgageInWords", label: "رهن به حروف" },
+  { key: "totalInWords", label: "جمع به حروف" },
+  { key: "prePaymentAmount", label: "پیش‌پرداخت (ریال)" },
+  { key: "prePaymentChequeNumber", label: "شماره چک پیش‌پرداخت" },
+  { key: "prePaymentBankName", label: "بانک پیش‌پرداخت" },
+  { key: "prePaymentBankBranch", label: "شعبه بانک" },
+  { key: "remainderAmount", label: "الباقی (ریال)" },
+  { key: "remainderDueDate", label: "موعد الباقی" },
+  { key: "deliveryDate", label: "تاریخ تحویل" },
+  { key: "cancelationPenalty", label: "وجه التزام فسخ" },
+  { key: "breachPenalty", label: "وجه التزام تخلف" },
+  { key: "notaryFeePayer", label: "عهده‌دار هزینه دفترخانه" },
+  {
+    key: "delayPenaltyFirstPartyPerDay",
+    label: "وجه التزام تأخیر طرف اول (روزانه)",
+  },
+  {
+    key: "delayPenaltySecondPartyPerDay",
+    label: "وجه التزام تأخیر طرف دوم (روزانه)",
+  },
+];
+
+const GOODWILL_FIELDS: {
+  key: keyof ContractWizardState["goodwill"];
+  label: string;
+}[] = [
+  { key: "shareUnits", label: "دانگ" },
+  { key: "pricePerSqm", label: "قیمت هر متر (ریال)" },
+  { key: "totalAmount", label: "مبلغ سرقفلی (ریال)" },
+  { key: "prePaymentAmount", label: "بیعانه (ریال)" },
+  { key: "prePaymentChequeNumber", label: "شماره چک بیعانه" },
+  { key: "prePaymentBankName", label: "بانک بیعانه" },
+  { key: "prePaymentBankBranch", label: "شعبه بانک" },
+  { key: "remainderAmount", label: "الباقی (ریال)" },
+  { key: "remainderDueDate", label: "موعد الباقی" },
+  { key: "penaltyAmount", label: "وجه التزام" },
+  { key: "deliveryDate", label: "تاریخ تحویل" },
+];
+
+const PRESALE_FIELDS: {
+  key: keyof ContractWizardState["presale"];
+  label: string;
+}[] = [
+  { key: "renovationCode", label: "کد نوسازی" },
+  { key: "technicalIdNumber", label: "شناسه فنی" },
+  { key: "insuranceNumber", label: "شماره بیمه" },
+  { key: "buildingPermitNumber", label: "شماره پروانه" },
+  { key: "buildingPermitDate", label: "تاریخ پروانه" },
+  { key: "equipped", label: "تجهیزات / مجهز بودن" },
+  { key: "totalFloors", label: "تعداد طبقات" },
+  { key: "totalUnits", label: "تعداد واحدها" },
+  { key: "areaSqm", label: "متراژ (مترمربع)" },
+  { key: "storage", label: "انباری" },
+  { key: "orientation", label: "جهت واحد" },
+  { key: "parkingNumberAndArea", label: "پارکینگ (شماره و متراژ)" },
+  { key: "flooringType", label: "نوع کف‌پوش" },
+  { key: "cabinetAndFaucetType", label: "کابینت و شیرآلات" },
+  { key: "bathroomType", label: "سرویس بهداشتی" },
+  { key: "switchOutletType", label: "کلید و پریز" },
+  { key: "entranceDoorType", label: "درب ورودی" },
+  { key: "interiorDoorType", label: "درب داخلی" },
+  { key: "ceilingPlasterType", label: "گچ‌بری سقف" },
+  { key: "emergencyWaterSourceType", label: "منبع آب اضطراری" },
+  { key: "heatingType", label: "سیستم گرمایش" },
+  { key: "coolerType", label: "سیستم سرمایش" },
+  { key: "intercomType", label: "آیفون" },
+  { key: "cctv", label: "دوربین مدار بسته" },
+  { key: "tilingType", label: "کاشی‌کاری" },
+  { key: "windowType", label: "پنجره" },
+  { key: "facadeType", label: "نما" },
+  { key: "parkingFloorWallCover", label: "پوشش کف و دیوار پارکینگ" },
+  { key: "lighting", label: "روشنایی" },
+  { key: "balconyCorridorRailing", label: "نرده بالکن/راهرو" },
+  { key: "fireExtinguisher", label: "اطفای حریق" },
+  { key: "elevator", label: "آسانسور" },
+  { key: "waterMotor", label: "موتور آب" },
+  { key: "utilitiesScore", label: "امتیاز انشعابات" },
+  { key: "loan", label: "وام" },
+  { key: "loanType", label: "نوع وام" },
+  { key: "loanInstallmentAmount", label: "قسط وام (ریال)" },
+  { key: "totalAmount", label: "مبلغ کل (ریال)" },
+  { key: "totalInWords", label: "مبلغ به حروف" },
+  { key: "deliveryDate", label: "تاریخ تحویل" },
+  { key: "deedTransferDate", label: "تاریخ انتقال سند" },
+  { key: "selfDeclareFormNumber", label: "شماره فرم خوداظهاری" },
+  { key: "voucherOrganizationNumber", label: "شماره دفترخانه / سازمان" },
+];
+
+const RESCISSION_FIELDS: {
+  key: keyof ContractWizardState["rescission"];
+  label: string;
+}[] = [
+  { key: "originalContractNumber", label: "شماره قرارداد اصلی" },
+  { key: "originalContractDate", label: "تاریخ قرارداد اصلی" },
+  { key: "originalAgencyName", label: "نام آژانس قرارداد اصلی" },
+  { key: "shareUnits", label: "دانگ" },
+  { key: "areaSqm", label: "متراژ (مترمربع)" },
+  { key: "county", label: "شهرستان" },
+  { key: "ownershipNumber", label: "شماره مالکیت" },
+  { key: "aggregationClause", label: "بند تجمیع" },
+  { key: "deliveryClause", label: "بند تحویل" },
+  { key: "price", label: "مبلغ (ریال)" },
+  { key: "paymentType", label: "نحوه پرداخت" },
+];
+
+const CJV_FIELDS: {
+  key: keyof ContractWizardState["cjv"];
+  label: string;
+}[] = [
+  { key: "propertyDescription", label: "شرح ملک" },
+  { key: "shareUnits", label: "دانگ" },
+  { key: "areaSqm", label: "متراژ (مترمربع)" },
+  { key: "totalAmount", label: "مبلغ کل (ریال)" },
+  { key: "totalInWords", label: "مبلغ به حروف" },
+  { key: "governmentalCosts", label: "هزینه‌های دولتی" },
+  { key: "constructionCosts", label: "هزینه‌های ساخت" },
+  { key: "facilityRightsCosts", label: "حقوق تسهیلات" },
+  { key: "destructionCost", label: "هزینه تخریب" },
+  { key: "firstPartyShare", label: "سهم طرف اول" },
+  { key: "secondPartyShare", label: "سهم طرف دوم" },
+  { key: "startDateInWords", label: "تاریخ شروع (به حروف)" },
+  { key: "endDateInWords", label: "تاریخ پایان (به حروف)" },
+  { key: "costDetailsPrepareDate", label: "تاریخ تهیه جزئیات هزینه" },
+  { key: "voucherTransferDate", label: "تاریخ انتقال سند" },
+  { key: "shareUnitsToTransfer", label: "دانگ قابل انتقال" },
+  {
+    key: "delayPenaltyFirstPartyPerDay",
+    label: "وجه التزام تأخیر طرف اول (روزانه)",
+  },
+  {
+    key: "delayPenaltySecondPartyPerDay",
+    label: "وجه التزام تأخیر طرف دوم (روزانه)",
+  },
+];
+
+function LawyerCard({
+  title,
+  lawyer,
+  onChange,
+}: {
+  title: string;
+  lawyer: LawyerForm;
+  onChange: (next: LawyerForm) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-5 md:grid-cols-2">
+        {LAWYER_FIELDS.map(({ key, label }) => (
+          <Field key={key} label={label}>
+            <Input
+              value={lawyer[key]}
+              onChange={(e) => onChange({ ...lawyer, [key]: e.target.value })}
+            />
+          </Field>
+        ))}
+      </CardContent>
+    </Card>
+  );
 }
 
 export function ContractWizard({
@@ -93,11 +311,23 @@ export function ContractWizard({
       }
     }
     if (state.step === "terms") {
-      if (state.contractType === "SALE" && !state.sale.totalRials.trim()) {
+      if (state.contractType === "SALE" && !state.sale.totalAmount.trim()) {
         return "وارد کردن مبلغ کل مبایعه‌نامه الزامی است";
       }
-      if (state.contractType === "RENT" && !state.rent.monthlyRials.trim()) {
+      if (state.contractType === "RENT" && !state.rent.monthlyAmount.trim()) {
         return "وارد کردن اجاره ماهانه الزامی است";
+      }
+      if (
+        state.contractType === "GOODWILL" &&
+        !state.goodwill.totalAmount.trim()
+      ) {
+        return "وارد کردن مبلغ سرقفلی الزامی است";
+      }
+      if (
+        state.contractType === "PRE_SALE" &&
+        !state.presale.totalAmount.trim()
+      ) {
+        return "وارد کردن مبلغ کل پیش‌فروش الزامی است";
       }
     }
     return null;
@@ -233,6 +463,20 @@ export function ContractWizard({
                 onChange={(e) => patch({ description: e.target.value })}
               />
             </Field>
+            <Field label="تاریخ قرارداد">
+              <Input
+                value={state.contractDate}
+                onChange={(e) => patch({ contractDate: e.target.value })}
+                placeholder="1404/01/15"
+              />
+            </Field>
+            <Field label="ساعت قرارداد">
+              <Input
+                value={state.contractTime}
+                onChange={(e) => patch({ contractTime: e.target.value })}
+                placeholder="10:30"
+              />
+            </Field>
             <Field label="درصد کمیسیون">
               <Input
                 type="number"
@@ -261,6 +505,56 @@ export function ContractWizard({
                 type="number"
                 value={state.taxAmount}
                 onChange={(e) => patch({ taxAmount: e.target.value })}
+              />
+            </Field>
+            <Field label="کمیسیون طرف اول (ریال)">
+              <Input
+                type="number"
+                value={state.firstPartyCommissionAmount}
+                onChange={(e) =>
+                  patch({ firstPartyCommissionAmount: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="کمیسیون طرف دوم (ریال)">
+              <Input
+                type="number"
+                value={state.secondPartyCommissionAmount}
+                onChange={(e) =>
+                  patch({ secondPartyCommissionAmount: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="قوانین کمیسیون شهر">
+              <Input
+                value={state.commissionCityRules}
+                onChange={(e) =>
+                  patch({ commissionCityRules: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="شماره فاکتور کمیسیون">
+              <Input
+                value={state.commissionFactorNumber}
+                onChange={(e) =>
+                  patch({ commissionFactorNumber: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="شماره فاکتور طرف اول">
+              <Input
+                value={state.firstPartyFactorNumber}
+                onChange={(e) =>
+                  patch({ firstPartyFactorNumber: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="شماره فاکتور طرف دوم">
+              <Input
+                value={state.secondPartyFactorNumber}
+                onChange={(e) =>
+                  patch({ secondPartyFactorNumber: e.target.value })
+                }
               />
             </Field>
           </CardContent>
@@ -319,6 +613,32 @@ export function ContractWizard({
         </div>
       ) : null}
 
+      {state.step === "lawyers" ? (
+        <div className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            وکیل طرفین اختیاری است؛ می‌توانید این مرحله را رد کنید.
+          </p>
+          <LawyerCard
+            title="وکیل طرف اول (اختیاری)"
+            lawyer={state.lawyers.firstPartyLawyer}
+            onChange={(firstPartyLawyer) =>
+              patch({
+                lawyers: { ...state.lawyers, firstPartyLawyer },
+              })
+            }
+          />
+          <LawyerCard
+            title="وکیل طرف دوم (اختیاری)"
+            lawyer={state.lawyers.secondPartyLawyer}
+            onChange={(secondPartyLawyer) =>
+              patch({
+                lawyers: { ...state.lawyers, secondPartyLawyer },
+              })
+            }
+          />
+        </div>
+      ) : null}
+
       {state.step === "terms" ? (
         <Card>
           <CardHeader>
@@ -329,136 +649,18 @@ export function ContractWizard({
           <CardContent className="grid gap-5 md:grid-cols-2">
             {state.contractType === "SALE" ? (
               <>
-                <Field label="دانگ">
-                  <Input
-                    value={state.sale.shareUnits}
-                    onChange={(e) =>
-                      patch({
-                        sale: { ...state.sale, shareUnits: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="مبلغ کل (ریال)">
-                  <Input
-                    value={state.sale.totalRials}
-                    onChange={(e) =>
-                      patch({ sale: { ...state.sale, totalRials: e.target.value } })
-                    }
-                  />
-                </Field>
-                <Field label="مبلغ به حروف">
-                  <Input
-                    value={state.sale.totalInWords}
-                    onChange={(e) =>
-                      patch({
-                        sale: { ...state.sale, totalInWords: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="بیعانه (ریال)">
-                  <Input
-                    value={state.sale.downPaymentRials}
-                    onChange={(e) =>
-                      patch({
-                        sale: {
-                          ...state.sale,
-                          downPaymentRials: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="نحوه پرداخت بیعانه">
-                  <Input
-                    value={state.sale.downPaymentMethod}
-                    onChange={(e) =>
-                      patch({
-                        sale: {
-                          ...state.sale,
-                          downPaymentMethod: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="بانک بیعانه (اختیاری)">
-                  <Input
-                    value={state.sale.downPaymentBank}
-                    onChange={(e) =>
-                      patch({
-                        sale: { ...state.sale, downPaymentBank: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="الباقی (ریال)">
-                  <Input
-                    value={state.sale.remainingRials}
-                    onChange={(e) =>
-                      patch({
-                        sale: { ...state.sale, remainingRials: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="موعد الباقی">
-                  <Input
-                    value={state.sale.remainingDueAt}
-                    onChange={(e) =>
-                      patch({
-                        sale: { ...state.sale, remainingDueAt: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="دفترخانه">
-                  <Input
-                    value={state.sale.notaryOffice}
-                    onChange={(e) =>
-                      patch({
-                        sale: { ...state.sale, notaryOffice: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="تاریخ انتقال سند">
-                  <Input
-                    value={state.sale.officialDeedDueAt}
-                    onChange={(e) =>
-                      patch({
-                        sale: {
-                          ...state.sale,
-                          officialDeedDueAt: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="تاریخ تحویل">
-                  <Input
-                    value={state.sale.deliveryDueAt}
-                    onChange={(e) =>
-                      patch({
-                        sale: { ...state.sale, deliveryDueAt: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="وجه التزام روزانه (ریال)">
-                  <Input
-                    value={state.sale.delayPenaltyPerDayRials}
-                    onChange={(e) =>
-                      patch({
-                        sale: {
-                          ...state.sale,
-                          delayPenaltyPerDayRials: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
+                {SALE_FIELDS.map(({ key, label }) => (
+                  <Field key={key} label={label}>
+                    <Input
+                      value={state.sale[key]}
+                      onChange={(e) =>
+                        patch({
+                          sale: { ...state.sale, [key]: e.target.value },
+                        })
+                      }
+                    />
+                  </Field>
+                ))}
                 <div className="md:col-span-2">
                   <NotesField
                     value={state.sale.notes}
@@ -472,135 +674,18 @@ export function ContractWizard({
 
             {state.contractType === "RENT" ? (
               <>
-                <Field label="دانگ">
-                  <Input
-                    value={state.rent.shareUnits}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, shareUnits: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="تاریخ شروع">
-                  <Input
-                    value={state.rent.startDate}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, startDate: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="تاریخ پایان">
-                  <Input
-                    value={state.rent.endDate}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, endDate: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="مدت (ماه)">
-                  <Input
-                    value={state.rent.durationMonths}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, durationMonths: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="اجاره کل دوره (ریال)">
-                  <Input
-                    value={state.rent.totalRials}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, totalRials: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="اجاره ماهانه (ریال)">
-                  <Input
-                    value={state.rent.monthlyRials}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, monthlyRials: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="اجاره ماهانه به حروف">
-                  <Input
-                    value={state.rent.monthlyInWords}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, monthlyInWords: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="ودیعه / رهن (ریال)">
-                  <Input
-                    value={state.rent.securityDepositRials}
-                    onChange={(e) =>
-                      patch({
-                        rent: {
-                          ...state.rent,
-                          securityDepositRials: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="روز پرداخت ماهانه">
-                  <Input
-                    value={state.rent.paymentDayOfMonth}
-                    onChange={(e) =>
-                      patch({
-                        rent: {
-                          ...state.rent,
-                          paymentDayOfMonth: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="بانک">
-                  <Input
-                    value={state.rent.bankName}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, bankName: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="شماره حساب (اختیاری)">
-                  <Input
-                    value={state.rent.accountNumber}
-                    onChange={(e) =>
-                      patch({
-                        rent: { ...state.rent, accountNumber: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="وجه التزام روزانه (ریال)">
-                  <Input
-                    value={state.rent.delayPenaltyPerDayRials}
-                    onChange={(e) =>
-                      patch({
-                        rent: {
-                          ...state.rent,
-                          delayPenaltyPerDayRials: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
+                {RENT_FIELDS.map(({ key, label }) => (
+                  <Field key={key} label={label}>
+                    <Input
+                      value={state.rent[key]}
+                      onChange={(e) =>
+                        patch({
+                          rent: { ...state.rent, [key]: e.target.value },
+                        })
+                      }
+                    />
+                  </Field>
+                ))}
                 <div className="md:col-span-2">
                   <NotesField
                     value={state.rent.notes}
@@ -612,117 +697,109 @@ export function ContractWizard({
               </>
             ) : null}
 
-            {state.contractType !== "SALE" && state.contractType !== "RENT" ? (
+            {state.contractType === "GOODWILL" ? (
               <>
-                {(state.contractType === "GOODWILL" ||
-                  state.contractType === "CONSTRUCTION_JOINT_VENTURE") && (
-                  <Field label="دانگ">
+                {GOODWILL_FIELDS.map(({ key, label }) => (
+                  <Field key={key} label={label}>
                     <Input
-                      value={state.generic.shareUnits}
+                      value={state.goodwill[key]}
                       onChange={(e) =>
                         patch({
-                          generic: {
-                            ...state.generic,
-                            shareUnits: e.target.value,
+                          goodwill: {
+                            ...state.goodwill,
+                            [key]: e.target.value,
                           },
                         })
                       }
                     />
                   </Field>
-                )}
-                <Field label="مبلغ کل (ریال)">
-                  <Input
-                    value={state.generic.totalRials}
-                    onChange={(e) =>
-                      patch({
-                        generic: {
-                          ...state.generic,
-                          totalRials: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="ماهانه (ریال)">
-                  <Input
-                    value={state.generic.monthlyRials}
-                    onChange={(e) =>
-                      patch({
-                        generic: {
-                          ...state.generic,
-                          monthlyRials: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="ودیعه (ریال)">
-                  <Input
-                    value={state.generic.depositRials}
-                    onChange={(e) =>
-                      patch({
-                        generic: {
-                          ...state.generic,
-                          depositRials: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="شروع">
-                  <Input
-                    value={state.generic.startDate}
-                    onChange={(e) =>
-                      patch({
-                        generic: {
-                          ...state.generic,
-                          startDate: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="پایان">
-                  <Input
-                    value={state.generic.endDate}
-                    onChange={(e) =>
-                      patch({
-                        generic: { ...state.generic, endDate: e.target.value },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="تحویل">
-                  <Input
-                    value={state.generic.deliveryDueAt}
-                    onChange={(e) =>
-                      patch({
-                        generic: {
-                          ...state.generic,
-                          deliveryDueAt: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
-                <Field label="انتقال سند">
-                  <Input
-                    value={state.generic.officialDeedDueAt}
-                    onChange={(e) =>
-                      patch({
-                        generic: {
-                          ...state.generic,
-                          officialDeedDueAt: e.target.value,
-                        },
-                      })
-                    }
-                  />
-                </Field>
+                ))}
                 <div className="md:col-span-2">
                   <NotesField
-                    value={state.generic.notes}
+                    value={state.goodwill.notes}
                     onChange={(notes) =>
-                      patch({ generic: { ...state.generic, notes } })
+                      patch({ goodwill: { ...state.goodwill, notes } })
+                    }
+                  />
+                </div>
+              </>
+            ) : null}
+
+            {state.contractType === "PRE_SALE" ? (
+              <>
+                {PRESALE_FIELDS.map(({ key, label }) => (
+                  <Field key={key} label={label}>
+                    <Input
+                      value={state.presale[key]}
+                      onChange={(e) =>
+                        patch({
+                          presale: {
+                            ...state.presale,
+                            [key]: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+                ))}
+                <div className="md:col-span-2">
+                  <NotesField
+                    value={state.presale.notes}
+                    onChange={(notes) =>
+                      patch({ presale: { ...state.presale, notes } })
+                    }
+                  />
+                </div>
+              </>
+            ) : null}
+
+            {state.contractType === "MUTUAL_RESCISSION" ? (
+              <>
+                {RESCISSION_FIELDS.map(({ key, label }) => (
+                  <Field key={key} label={label}>
+                    <Input
+                      value={state.rescission[key]}
+                      onChange={(e) =>
+                        patch({
+                          rescission: {
+                            ...state.rescission,
+                            [key]: e.target.value,
+                          },
+                        })
+                      }
+                    />
+                  </Field>
+                ))}
+                <div className="md:col-span-2">
+                  <NotesField
+                    value={state.rescission.notes}
+                    onChange={(notes) =>
+                      patch({ rescission: { ...state.rescission, notes } })
+                    }
+                  />
+                </div>
+              </>
+            ) : null}
+
+            {state.contractType === "CONSTRUCTION_JOINT_VENTURE" ? (
+              <>
+                {CJV_FIELDS.map(({ key, label }) => (
+                  <Field key={key} label={label}>
+                    <Input
+                      value={state.cjv[key]}
+                      onChange={(e) =>
+                        patch({
+                          cjv: { ...state.cjv, [key]: e.target.value },
+                        })
+                      }
+                    />
+                  </Field>
+                ))}
+                <div className="md:col-span-2">
+                  <NotesField
+                    value={state.cjv.notes}
+                    onChange={(notes) =>
+                      patch({ cjv: { ...state.cjv, notes } })
                     }
                   />
                 </div>
@@ -767,7 +844,13 @@ export function ContractWizard({
           </Card>
 
           <div id="contract-print-root" className="rounded-xl border bg-muted/30 p-4">
-            <ContractPreview state={state} mode={previewMode} />
+            <ContractPreview
+              state={state}
+              mode={previewMode}
+              organizationId={
+                state.property?.organizationId ?? undefined
+              }
+            />
           </div>
         </div>
       ) : null}
@@ -784,7 +867,7 @@ export function ContractWizard({
         </Button>
         {state.step !== "review" ? (
           <Button type="button" onClick={onNext}>
-            {messages.next}
+            {state.step === "lawyers" ? "ادامه (رد کردن وکلا)" : messages.next}
             <ChevronLeft className="size-4" />
           </Button>
         ) : (
