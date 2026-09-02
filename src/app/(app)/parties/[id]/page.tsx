@@ -56,13 +56,21 @@ export default function PartyDetailPage() {
             <p>شناسه اقتصادی: {item.economicCode ?? messages.none}</p>
             <p>نام پدر: {item.fatherName ?? messages.none}</p>
             <p>جنسیت: {item.gender ? genderLabels[item.gender] : messages.none}</p>
+            <p>شماره شناسنامه: {item.identityNumber ?? messages.none}</p>
+            <p>محل صدور شناسنامه: {item.identityExportPlace ?? messages.none}</p>
             <p>تلفن: {item.phone ?? messages.none}</p>
             <p>ایمیل: {item.email ?? messages.none}</p>
             <p>محل تولد: {item.birthPlace ?? messages.none}</p>
+            <p>تاریخ تولد: {item.birthDate ?? messages.none}</p>
             {item.address ? (
-              <p>
-                نشانی: {item.address.city}، {item.address.province}
-              </p>
+              <>
+                <p>
+                  نشانی: {item.address.city}، {item.address.province}
+                  {item.address.details ? ` — ${item.address.details}` : ""}
+                  {item.address.plaque ? ` (پلاک ${item.address.plaque})` : ""}
+                </p>
+                <p>کد پستی: {item.address.postalCode ?? messages.none}</p>
+              </>
             ) : null}
           </CardContent>
         </Card>

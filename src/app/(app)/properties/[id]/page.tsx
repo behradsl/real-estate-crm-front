@@ -68,11 +68,14 @@ export default function PropertyDetailPage() {
               خواب / سرویس: {item.bedrooms ?? messages.none} / {item.bathrooms ?? messages.none}
             </p>
             {item.address ? (
-              <p>
-                نشانی: {item.address.city}، {item.address.province}
-                {item.address.details ? ` — ${item.address.details}` : ""}
-                {item.address.plaque ? ` (پلاک ${item.address.plaque})` : ""}
-              </p>
+              <>
+                <p>
+                  نشانی: {item.address.city}، {item.address.province}
+                  {item.address.details ? ` — ${item.address.details}` : ""}
+                  {item.address.plaque ? ` (پلاک ${item.address.plaque})` : ""}
+                </p>
+                <p>کد پستی: {item.address.postalCode ?? messages.none}</p>
+              </>
             ) : null}
           </CardContent>
         </Card>

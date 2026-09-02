@@ -1,19 +1,10 @@
 import type { ContractType } from "@/lib/api/types";
-
-/** Shared party / lawyer / org stamp keys used across many contract types. */
-const partyKeys = (prefix: "firstParty" | "secondParty") =>
-  [
-    `${prefix}.name`,
-    `${prefix}.fatherName`,
-    `${prefix}.identityNumber`,
-    `${prefix}.identityExportPlace`,
-    `${prefix}.nationalCode`,
-    `${prefix}.birthPlace`,
-    `${prefix}.birthDate`,
-    `${prefix}.address`,
-    `${prefix}.postalCode`,
-    `${prefix}.phone`,
-  ] as const;
+import {
+  partyFieldsForContract,
+  partyPrintKeysFromFields,
+  propertyFieldsForContract,
+  propertyPrintKeysFromFields,
+} from "@/lib/contracts/contract-entity-fields";
 
 const lawyerKeys = (prefix: "firstParty" | "secondParty") =>
   [
@@ -48,27 +39,22 @@ const orgStampKeys = [
   "commission.secondPartyFactorNumber",
 ] as const;
 
-/** Mirror of backend PRINT_FIELD_CATALOG — allowed overlay field keys per type. */
-export const PRINT_FIELD_CATALOG: Record<ContractType, readonly string[]> = {
-  SALE: [
-    ...partyKeys("firstParty"),
-    ...lawyerKeys("firstParty"),
-    ...partyKeys("secondParty"),
-    ...lawyerKeys("secondParty"),
+/** Terms-only property keys that are not derived from PropertyForm fields. */
+const PROPERTY_TERMS_ONLY: Record<ContractType, readonly string[]> = {
+  SALE: ["property.shareUnits", "property.pricePerSqm"],
+  RENT: ["property.shareUnits", "property.ownerName"],
+  GOODWILL: ["property.shareUnits", "property.pricePerSqm"],
+  PRE_SALE: [],
+  MUTUAL_RESCISSION: [
     "property.shareUnits",
-    "property.type",
-    "property.cadastralNumber",
-    "property.subParcelNumber",
-    "property.mainParcelNumber",
-    "property.yearBuilt",
-    "property.cadastralDistrict",
-    "property.registrationArea",
-    "property.areaSqm",
-    "property.pricePerSqm",
-    "property.parking",
-    "property.storage",
-    "property.address",
-    "property.postalCode",
+    "property.county",
+    "property.ownershipNumber",
+  ],
+  CONSTRUCTION_JOINT_VENTURE: ["property.shareUnits"],
+};
+
+const TYPE_TERMS_KEYS: Record<ContractType, readonly string[]> = {
+  SALE: [
     "sale.totalAmount",
     "sale.totalInWords",
     "sale.prePaymentAmount",
@@ -84,24 +70,8 @@ export const PRINT_FIELD_CATALOG: Record<ContractType, readonly string[]> = {
     "sale.notaryFeePayer",
     "sale.delayPenaltyFirstPartyPerDay",
     "sale.delayPenaltySecondPartyPerDay",
-    ...orgStampKeys,
   ],
   RENT: [
-    ...partyKeys("firstParty"),
-    ...lawyerKeys("firstParty"),
-    ...partyKeys("secondParty"),
-    ...lawyerKeys("secondParty"),
-    "property.shareUnits",
-    "property.type",
-    "property.cadastralNumber",
-    "property.subParcelNumber",
-    "property.mainParcelNumber",
-    "property.deedSerialNumber",
-    "property.ownerName",
-    "property.bedrooms",
-    "property.parking",
-    "property.storage",
-    "property.postalCode",
     "rent.durationMonths",
     "rent.fromDate",
     "rent.toDate",
@@ -122,22 +92,8 @@ export const PRINT_FIELD_CATALOG: Record<ContractType, readonly string[]> = {
     "rent.notaryFeePayer",
     "rent.delayPenaltyFirstPartyPerDay",
     "rent.delayPenaltySecondPartyPerDay",
-    ...orgStampKeys,
   ],
   GOODWILL: [
-    ...partyKeys("firstParty"),
-    ...lawyerKeys("firstParty"),
-    ...partyKeys("secondParty"),
-    ...lawyerKeys("secondParty"),
-    "property.shareUnits",
-    "property.type",
-    "property.cadastralNumber",
-    "property.subParcelNumber",
-    "property.mainParcelNumber",
-    "property.cadastralDistrict",
-    "property.registrationArea",
-    "property.pricePerSqm",
-    "property.storage",
     "goodwill.totalAmount",
     "goodwill.prePaymentAmount",
     "goodwill.prePaymentChequeNumber",
@@ -147,15 +103,8 @@ export const PRINT_FIELD_CATALOG: Record<ContractType, readonly string[]> = {
     "goodwill.remainderDueDate",
     "goodwill.penaltyAmount",
     "goodwill.deliveryDate",
-    ...orgStampKeys,
   ],
   PRE_SALE: [
-    ...partyKeys("firstParty"),
-    ...lawyerKeys("firstParty"),
-    ...partyKeys("secondParty"),
-    ...lawyerKeys("secondParty"),
-    "property.type",
-    "property.cadastralNumber",
     "presale.renovationCode",
     "presale.technicalIdNumber",
     "presale.insuranceNumber",
@@ -199,39 +148,18 @@ export const PRINT_FIELD_CATALOG: Record<ContractType, readonly string[]> = {
     "presale.deedTransferDate",
     "presale.selfDeclareFormNumber",
     "presale.voucherOrganizationNumber",
-    ...orgStampKeys,
   ],
   MUTUAL_RESCISSION: [
-    ...partyKeys("firstParty"),
-    ...lawyerKeys("firstParty"),
-    ...partyKeys("secondParty"),
-    ...lawyerKeys("secondParty"),
     "rescission.originalContractNumber",
     "rescission.originalContractDate",
     "rescission.originalAgencyName",
-    "property.shareUnits",
-    "property.areaSqm",
-    "property.cadastralNumber",
-    "property.subParcelNumber",
-    "property.mainParcelNumber",
-    "property.cadastralDistrict",
-    "property.county",
-    "property.ownershipNumber",
     "rescission.aggregationClause",
     "rescission.deliveryClause",
     "rescission.price",
     "rescission.paymentType",
-    ...orgStampKeys,
   ],
   CONSTRUCTION_JOINT_VENTURE: [
-    ...partyKeys("firstParty"),
-    ...lawyerKeys("firstParty"),
-    ...partyKeys("secondParty"),
-    ...lawyerKeys("secondParty"),
     "cjv.propertyDescription",
-    "property.address",
-    "property.shareUnits",
-    "property.areaSqm",
     "cjv.totalAmount",
     "cjv.totalInWords",
     "cjv.governmentalCosts",
@@ -247,8 +175,30 @@ export const PRINT_FIELD_CATALOG: Record<ContractType, readonly string[]> = {
     "cjv.shareUnitsToTransfer",
     "cjv.delayPenaltyFirstPartyPerDay",
     "cjv.delayPenaltySecondPartyPerDay",
-    ...orgStampKeys,
   ],
+};
+
+function catalogForType(type: ContractType): readonly string[] {
+  return [
+    ...partyPrintKeysFromFields(partyFieldsForContract(type), "firstParty"),
+    ...lawyerKeys("firstParty"),
+    ...partyPrintKeysFromFields(partyFieldsForContract(type), "secondParty"),
+    ...lawyerKeys("secondParty"),
+    ...propertyPrintKeysFromFields(propertyFieldsForContract(type)),
+    ...PROPERTY_TERMS_ONLY[type],
+    ...TYPE_TERMS_KEYS[type],
+    ...orgStampKeys,
+  ];
+}
+
+/** Allowed overlay field keys per contract type (aligned with entity form fields). */
+export const PRINT_FIELD_CATALOG: Record<ContractType, readonly string[]> = {
+  SALE: catalogForType("SALE"),
+  RENT: catalogForType("RENT"),
+  GOODWILL: catalogForType("GOODWILL"),
+  PRE_SALE: catalogForType("PRE_SALE"),
+  MUTUAL_RESCISSION: catalogForType("MUTUAL_RESCISSION"),
+  CONSTRUCTION_JOINT_VENTURE: catalogForType("CONSTRUCTION_JOINT_VENTURE"),
 };
 
 export function catalogKeysForType(type: ContractType): readonly string[] {
